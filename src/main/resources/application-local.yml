@@ -1,0 +1,64 @@
+# =============================================================================
+# 'local' profile — developer machine, connecting to the AZURE dev database as
+# YOUR OWN Entra ID user (passwordless; token comes from your `az login`).
+# Activate with: SPRING_PROFILES_ACTIVE=local
+#
+# Prerequisites:
+#   - `az login` as your UPN (the user below must be a provisioned PG role)
+#   - outbound TCP 5432 open on your network (corporate networks often block it)
+#
+# No AZURE_* env vars: DefaultAzureCredential falls through to AzureCliCredential.
+# Prefer a fully offline run instead? Point at a local PostgreSQL with:
+#   DB_PASSWORDLESS_ENABLED=false SPRING_R2DBC_URL=r2dbc:postgresql://localhost:5432/rampup \
+#   SPRING_R2DBC_USERNAME=rampup SPRING_R2DBC_PASSWORD=rampup
+# (EmbeddedPostgresRunner in src/test serves one on port 5433, schema pre-applied.)
+#
+# Also enables DevTools (auto-restart + LiveReload), full actuator exposure and
+# verbose logging (R2DBC SQL + bind parameters). Never activate in prod.
+# =============================================================================
+spring:
+  devtools:
+    add-properties: true
+    restart:
+      enabled: true
+    livereload:
+      enabled: true
+
+app:
+  datasource:
+    passwordless-enabled: ${DB_PASSWORDLESS_ENABLED:true}
+    host: ${DB_HOST:vstn-dev-db-store-2.postgres.database.azure.com}
+    port: ${DB_PORT:5432}
+    database: ${DB_NAME:test_aat}
+    # Your Entra user — it is a provisioned PostgreSQL role on the dev server.
+    username: ${DB_USERNAME:muru@vstnconsultancy.com}
+    ssl-mode: require
+
+# Expose everything locally for debugging (health/metrics/env/beans/mappings/...).
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+# Verbose development logging.
+logging:
+  level:
+    root: INFO
+    com.ubs.wma.aat: DEBUG
+    # Spring Data / R2DBC plumbing
+    org.springframework.r2dbc: DEBUG
+    org.springframework.data.r2dbc: DEBUG
+    # Executed SQL and bind parameters from the r2dbc-postgresql driver
+    io.r2dbc.postgresql.QUERY: DEBUG
+    io.r2dbc.postgresql.PARAM: DEBUG
+    # Reactive web request/response mapping
+    org.springframework.web: DEBUG
+    org.springframework.http.server.reactive: DEBUG
+    # Azure Identity token acquisition (handy when debugging passwordless auth)
+    com.azure.identity: DEBUG
+  pattern:
+    console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(%-5p) %clr([%t]){faint} %clr(%-40.40logger{39}){cyan} : %m%n"

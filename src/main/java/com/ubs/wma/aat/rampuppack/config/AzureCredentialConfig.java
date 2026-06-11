@@ -12,6 +12,15 @@ import org.springframework.util.StringUtils;
 /**
  * Provides the single {@link TokenCredential} that represents this service's Azure identity.
  * It is reused both for StaatEmail calls and for Entra passwordless database access.
+ *
+ * <p>Resolution order:
+ * <ol>
+ *   <li>tenant-id + client-id + client-secret all set → explicit SPN ({@code ClientSecretCredential});</li>
+ *   <li>client-id only → User-Assigned Managed Identity (UAMI) with that client id, via
+ *       {@code DefaultAzureCredential} (how the service runs when hosted in Azure);</li>
+ *   <li>nothing set → plain {@code DefaultAzureCredential} (system-assigned identity in Azure,
+ *       {@code az login} user on a developer machine).</li>
+ * </ol>
  */
 @Configuration(proxyBeanMethods = false)
 public class AzureCredentialConfig {
@@ -28,7 +37,11 @@ public class AzureCredentialConfig {
                     .clientSecret(props.clientSecret())
                     .build();
         }
-        // Managed identity in Azure; AZURE_* env vars or Azure CLI locally.
-        return new DefaultAzureCredentialBuilder().build();
+        DefaultAzureCredentialBuilder builder = new DefaultAzureCredentialBuilder();
+        if (StringUtils.hasText(props.clientId())) {
+            // User-Assigned Managed Identity: select WHICH identity by its client id.
+            builder.managedIdentityClientId(props.clientId());
+        }
+        return builder.build();
     }
 }

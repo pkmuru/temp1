@@ -32,12 +32,14 @@ src/main/java/com/ubs/wma/aat/rampuppack
 ├── exception/                            # ProblemDetail (RFC 9457) exception handling
 ├── config/                               # OpenAPI, Azure credential, StaatEmail WebClient, R2DBC passwordless
 │   └── properties/                       # typed @ConfigurationProperties
-├── datasource/                           # EntraTokenAuthConnectionFactory (token-as-password)
 └── client/staatemail/                    # StaatEmail @HttpExchange client + SPN Bearer filter
 src/main/resources
-├── application.yaml                      # main config (spring.sql.init.mode=never — the app never runs DDL)
+├── application.yml                       # base defaults (spring.sql.init.mode=never — the app never runs DDL)
+├── application-local.yml                 # 'local' profile: local PostgreSQL, passwordless OFF, DevTools
+├── application-dev.yml                   # 'dev' profile: Azure-hosted dev, passwordless via UAMI
 └── bootstrap.yaml                        # early/identity config (imported first)
 src/test/resources
+├── application-test.yml                  # 'test' profile: embedded local PostgreSQL (auto-activated by tests)
 └── schema.sql                            # table DDL — used by TESTS ONLY (embedded PostgreSQL)
 ```
 
@@ -112,7 +114,9 @@ Passwordless DB auth is **on by default**. Provide the service identity and data
 | `STAATEMAIL_SCOPE` | e.g. `api://<staatemail-app-id>/.default` |
 
 The DB access token is requested for scope `https://ossrdbms-aad.database.windows.net/.default`
-and used as the PostgreSQL password (see `EntraTokenAuthConnectionFactory`). StaatEmail calls get a
+and used as the PostgreSQL password via the driver's native dynamic-password support
+(see `R2dbcPasswordlessConfig` — the Microsoft token-as-password pattern; Spring Cloud Azure's
+passwordless starter covers JDBC only, this is the R2DBC equivalent). StaatEmail calls get a
 Bearer token for `STAATEMAIL_SCOPE` via `EntraBearerExchangeFilter`.
 
 > The application **never executes SQL/DDL scripts** (`spring.sql.init.mode=never`). The schema is

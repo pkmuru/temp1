@@ -1,0 +1,31 @@
+# =============================================================================
+# 'dev' profile — Azure-hosted DEV environment (Entra passwordless, no secrets).
+# Activate with: SPRING_PROFILES_ACTIVE=dev
+#
+# Identity:
+#   - Hosted in Azure: the User-Assigned Managed Identity (UAMI). Set
+#     AZURE_CLIENT_ID to the UAMI's client id and DB_USERNAME to the PostgreSQL
+#     role provisioned for that UAMI. No tenant id / secret needed.
+#   - Running from a laptop against the dev DB: leave AZURE_CLIENT_ID unset and
+#     `az login` — DefaultAzureCredential uses your user; DB_USERNAME is then
+#     your AAD UPN (it must be a provisioned PG role). Note: outbound TCP 5432
+#     must be open on your network (corporate networks often block it).
+# =============================================================================
+app:
+  datasource:
+    passwordless-enabled: true
+    host: ${DB_HOST:vstn-dev-db-store-2.postgres.database.azure.com}
+    port: ${DB_PORT:5432}
+    database: ${DB_NAME:test_aat}
+    username: ${DB_USERNAME:}        # UAMI PG role name (or your AAD UPN from a laptop)
+    ssl-mode: require
+
+  azure:
+    credential:
+      client-id: ${AZURE_CLIENT_ID:} # UAMI client id when hosted in Azure
+
+logging:
+  level:
+    com.ubs.wma.aat: DEBUG
+    # Token acquisition diagnostics — handy while the dev plumbing settles.
+    com.azure.identity: INFO

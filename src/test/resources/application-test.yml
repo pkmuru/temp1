@@ -1,0 +1,25 @@
+# =============================================================================
+# 'test' profile — automated tests ONLY (activated by AbstractIntegrationTest).
+#
+# Tests always connect to the LOCAL Zonky embedded PostgreSQL — never to an
+# Azure database. The embedded server runs on a random free port, which
+# AbstractIntegrationTest injects into spring.r2dbc.url at runtime; everything
+# static lives here. SQL init is enabled ONLY here: schema.sql (this folder)
+# is the DDL mirror of what the DBA/pipeline applies to real environments.
+# =============================================================================
+spring:
+  r2dbc:
+    # url is registered dynamically (embedded PG port) in AbstractIntegrationTest
+    username: postgres
+    password: postgres
+  sql:
+    init:
+      mode: always
+
+app:
+  datasource:
+    passwordless-enabled: false
+
+logging:
+  level:
+    com.ubs.wma.aat: INFO

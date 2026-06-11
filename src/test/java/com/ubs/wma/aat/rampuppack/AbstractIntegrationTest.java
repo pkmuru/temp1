@@ -5,6 +5,7 @@ import java.io.UncheckedIOException;
 
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
@@ -22,6 +23,7 @@ import org.springframework.test.context.DynamicPropertySource;
  * from src/test/resources) is enabled here for tests only; the application itself never runs DDL
  * ({@code spring.sql.init.mode=never} in application.yaml).
  */
+@ActiveProfiles("test")
 public abstract class AbstractIntegrationTest {
 
     protected static final EmbeddedPostgres POSTGRES = startEmbeddedPostgres();
@@ -34,13 +36,10 @@ public abstract class AbstractIntegrationTest {
         }
     }
 
+    /** Only the dynamic part (random embedded port) — all static test config is in application-test.yml. */
     @DynamicPropertySource
     static void registerDatasourceProperties(DynamicPropertyRegistry registry) {
-        registry.add("app.datasource.passwordless-enabled", () -> false);
         registry.add("spring.r2dbc.url",
                 () -> "r2dbc:postgresql://localhost:" + POSTGRES.getPort() + "/postgres");
-        registry.add("spring.r2dbc.username", () -> "postgres");
-        registry.add("spring.r2dbc.password", () -> "postgres");
-        registry.add("spring.sql.init.mode", () -> "always");
     }
 }
