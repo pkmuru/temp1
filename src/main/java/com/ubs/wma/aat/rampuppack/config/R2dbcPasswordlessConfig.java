@@ -1,5 +1,11 @@
 package com.ubs.wma.aat.rampuppack.config;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.azure.core.credential.AccessToken;
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.credential.TokenRequestContext;
@@ -12,6 +18,8 @@ import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.postgresql.client.SSLMode;
 import io.r2dbc.spi.ConnectionFactory;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,12 +46,23 @@ import reactor.core.publisher.Mono;
 @ConditionalOnProperty(name = "app.datasource.passwordless-enabled", havingValue = "true", matchIfMissing = true)
 public class R2dbcPasswordlessConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(R2dbcPasswordlessConfig.class);
+
     @Bean
     public ConnectionFactory connectionFactory(TokenCredential azureTokenCredential,
                                                DatasourceProperties props) {
         TokenRequestContext tokenRequest = new TokenRequestContext().addScopes(props.entraScope());
         Mono<CharSequence> entraTokenPassword = Mono.defer(() ->
-                azureTokenCredential.getToken(tokenRequest).map(AccessToken::getToken));
+                azureTokenCredential.getToken(tokenRequest)
+                        .doOnNext(token -> log.info(
+                                "Entra DB token acquired for principal '{}' (expires {}), connecting as PG role '{}'",
+                                principalOf(token.getToken()), token.getExpiresAt(), props.username()))
+                        .doOnError(e -> log.error("Entra DB token acquisition FAILED: {}", e.getMessage()))
+                        .map(AccessToken::getToken));
+
+        // Eager startup check (non-blocking, fire-and-forget): acquires one token immediately so a
+        // misconfigured identity is visible in the log at startup instead of on the first request.
+        entraTokenPassword.subscribe(token -> { }, e -> { });
 
         PostgresqlConnectionConfiguration configuration = PostgresqlConnectionConfiguration.builder()
                 .host(props.host())
@@ -64,5 +83,31 @@ public class R2dbcPasswordlessConfig {
                 .build();
 
         return new ConnectionPool(poolConfig);
+    }
+
+    /**
+     * Extracts the human-readable identity from the token's JWT claims for logging — the user UPN
+     * ({@code upn}/{@code preferred_username}), or the application/object id for an SPN or managed
+     * identity. Never logs the token itself.
+     */
+    static String principalOf(String jwt) {
+        try {
+            String[] parts = jwt.split("\\.");
+            if (parts.length < 2) {
+                return "<unknown>";
+            }
+            String claims = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+            for (String claim : List.of("upn", "preferred_username", "unique_name", "appid", "oid")) {
+                Matcher matcher = Pattern
+                        .compile("\"" + claim + "\"\\s*:\\s*\"([^\"]+)\"")
+                        .matcher(claims);
+                if (matcher.find()) {
+                    return matcher.group(1) + " (" + claim + ")";
+                }
+            }
+            return "<unknown>";
+        } catch (RuntimeException e) {
+            return "<unknown>";
+        }
     }
 }

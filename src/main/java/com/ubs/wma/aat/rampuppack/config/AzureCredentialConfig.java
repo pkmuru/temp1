@@ -5,6 +5,8 @@ import com.azure.identity.ClientSecretCredentialBuilder;
 import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.ubs.wma.aat.rampuppack.config.properties.AzureCredentialProperties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
@@ -25,12 +27,15 @@ import org.springframework.util.StringUtils;
 @Configuration(proxyBeanMethods = false)
 public class AzureCredentialConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(AzureCredentialConfig.class);
+
     @Bean
     public TokenCredential azureTokenCredential(AzureCredentialProperties props) {
         if (StringUtils.hasText(props.tenantId())
                 && StringUtils.hasText(props.clientId())
                 && StringUtils.hasText(props.clientSecret())) {
             // Explicit Service Principal (SPN) credentials.
+            log.info("Azure identity mode: SPN (ClientSecretCredential), client-id '{}'", props.clientId());
             return new ClientSecretCredentialBuilder()
                     .tenantId(props.tenantId())
                     .clientId(props.clientId())
@@ -40,7 +45,11 @@ public class AzureCredentialConfig {
         DefaultAzureCredentialBuilder builder = new DefaultAzureCredentialBuilder();
         if (StringUtils.hasText(props.clientId())) {
             // User-Assigned Managed Identity: select WHICH identity by its client id.
+            log.info("Azure identity mode: User-Assigned Managed Identity (UAMI), client-id '{}'", props.clientId());
             builder.managedIdentityClientId(props.clientId());
+        } else {
+            log.info("Azure identity mode: DefaultAzureCredential chain "
+                    + "(system-assigned identity in Azure, az-login user on a developer machine)");
         }
         return builder.build();
     }
