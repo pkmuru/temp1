@@ -1,6 +1,26 @@
 # ramp-up-pack-service
 
-Reactive REST microservice for **WMA AAT ramp-up packs**, built on the 2026 Spring stack.
+Reactive REST microservice for **WMA AAT STAAT retention-pack email delivery**, built on the 2026
+Spring stack. When ACE relationships are reassigned after FA attrition, this service emails each
+receiving FA (or the Field Leader, for pended relationships) their STAAT retention packs — one
+HTML document per ACE relationship, produced externally by DS/datamesh — via the firm **StaatEmail**
+API, live or scheduled in batches, with automatic retry of failed deliveries.
+
+| API | Purpose |
+|---|---|
+| `/api/v1/email-templates` | CRUD for email templates (`{placeholder}` merge fields) |
+| `/api/v1/insight-documents` | Read-only STAAT retention packs by ACE id (single or multiple) |
+| `/api/v1/emails/send` + `/api/v1/emails` | Live send (split into "Part X of N" above the 35 MB cap) + send log with merged values |
+| `/api/v1/emails/preview` | Same payload/pipeline as `/send`, but the merged subject + HTML body go back to the UI — nothing is sent or logged |
+| `/api/v1/email-batches` | Queue a send for the scheduler (`scheduledAt`), list/cancel |
+
+Tables are split across two PostgreSQL schemas: **`aat_app`** (owned by this service:
+`email_template`, `email_batch`, `email_log`) and **`datamesh`** (externally populated data
+products: `staat_insight_document`, SELECT-only for this service).
+
+A configurable scheduler (`app.scheduler.poll-interval`, default hourly) processes due batches,
+retries `FAILED` sends for up to 7 days (`app.email.retry-window`) and marks the rest `EXHAUSTED`.
+Failure-notification emails (the request's `failTemplateId`) go out on the first failure.
 
 | Concern | Choice |
 |---|---|
@@ -40,7 +60,9 @@ src/main/resources
 └── bootstrap.yaml                        # early/identity config (imported first)
 src/test/resources
 ├── application-test.yml                  # 'test' profile: embedded local PostgreSQL (auto-activated by tests)
-└── schema.sql                            # table DDL — used by TESTS ONLY (embedded PostgreSQL)
+└── db/
+    ├── schema.sql                        # schemas (aat_app, datamesh) + table DDL — TESTS ONLY; DBA handoff reference
+    └── seed.sql                          # idempotent reference data (templates + sample insight documents)
 ```
 
 ## Prerequisites
@@ -59,9 +81,13 @@ Integration tests use **Zonky embedded PostgreSQL** (real PG 16 binaries as a lo
 no Docker daemon) and Entra passwordless is disabled for tests, so **no Azure access is required**.
 See `AbstractIntegrationTest`.
 
-- `RampUpPackServiceApplicationTests` — full-context end-to-end (WebFlux → R2DBC → Postgres, OpenAPI, actuator, validation)
-- `RampUpPackControllerTest` — `@WebFluxTest` slice with a mocked service
-- `RampUpPackRepositoryTest` — `@DataR2dbcTest` slice against PostgreSQL
+- `EmailDeliveryFlowTest` — end-to-end delivery flows (send, split, failure + notice, retry,
+  preview, batch + scheduler passes) with only the outbound StaatEmail client mocked
+- `RampUpPackServiceApplicationTests` — full-context smoke (OpenAPI, actuator, validation,
+  auditing via `X-User-Id`, JSONB/array round-trip)
+- `repository/*RepositoryTest` — `@DataR2dbcTest` slices against PostgreSQL: claim queries
+  (`UPDATE … RETURNING SKIP LOCKED`), JSONB/array mappings, unique constraints, seeded datamesh reads
+- `TemplateMergerTest`, `EmailSendServiceSplitTest` — pure unit tests (merge fields, 35 MB splitting)
 - `EntraBearerExchangeFilterTest` — unit test of the SPN Bearer-token filter
 
 To explore the same embedded database interactively (psql/DBeaver, no Docker), run
@@ -74,8 +100,9 @@ Disable passwordless and point at a local database:
 ```bash
 docker run --rm -e POSTGRES_DB=rampup -e POSTGRES_USER=rampup -e POSTGRES_PASSWORD=rampup -p 5432:5432 postgres:16-alpine
 
-# Apply the schema yourself first (the app never runs DDL):
-psql -h localhost -U rampup rampup -f src/test/resources/schema.sql
+# Apply the schema (and optionally the seed) yourself first (the app never runs DDL):
+psql -h localhost -U rampup rampup -f src/test/resources/db/schema.sql
+psql -h localhost -U rampup rampup -f src/test/resources/db/seed.sql
 
 DB_PASSWORDLESS_ENABLED=false \
 DB_URL='r2dbc:postgresql://localhost:5432/rampup' \
@@ -93,10 +120,32 @@ Then browse:
 - Health → http://localhost:8080/actuator/health
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/ramp-up-packs \
+# Create a template ({placeholders} are merged at send time; X-User-Id feeds created_by/updated_by)
+curl -X POST http://localhost:8080/api/v1/email-templates \
+  -H 'Content-Type: application/json' -H 'X-User-Id: muru' \
+  -d '{"code":"FA_DELIVERY_SUCCESS","name":"Successful Delivery - FA",
+       "subject":"STAAT Client Retention Packs",
+       "body":"<p>Hi {faName},</p><p>{packCount} packs attached.</p>{householdTable}"}'
+
+# Retention packs for one or many ACE ids (read-only; populated externally)
+curl 'http://localhost:8080/api/v1/insight-documents/ACE-1001'
+curl 'http://localhost:8080/api/v1/insight-documents?aceIds=ACE-1001,ACE-1002'
+
+# Send now (exactly one of faId / fieldLeaderId)
+curl -X POST http://localhost:8080/api/v1/emails/send \
   -H 'Content-Type: application/json' \
-  -d '{"name":"APAC Advisor Onboarding","description":"Pack for APAC advisors","status":"DRAFT"}'
-curl http://localhost:8080/api/v1/ramp-up-packs
+  -d '{"aceIds":["ACE-1001","ACE-1002"],"faId":"FA-42","templateId":1,"failTemplateId":3,
+       "recipientEmail":"fa42@ubs.com","mergeFields":{"faName":"Alex Advisor"}}'
+
+# ...or queue it for the scheduler
+curl -X POST http://localhost:8080/api/v1/email-batches \
+  -H 'Content-Type: application/json' \
+  -d '{"aceIds":["ACE-1003"],"fieldLeaderId":"FL-7","templateId":2,"failTemplateId":3,
+       "recipientEmail":"fl7@ubs.com","mergeFields":{"fieldLeaderName":"Pat Leader"},
+       "scheduledAt":"2026-07-01T08:00:00Z"}'
+
+# Inspect outcomes (merged subject/body are stored for reference)
+curl 'http://localhost:8080/api/v1/emails?status=FAILED'
 ```
 
 ## Run against Azure (Entra passwordless + SPN)
@@ -112,6 +161,11 @@ Passwordless DB auth is **on by default**. Provide the service identity and data
 | `DB_SSL_MODE` | `require` (default) or `verify-full` |
 | `STAATEMAIL_BASE_URL` | base URL of the StaatEmail Entra-secured API |
 | `STAATEMAIL_SCOPE` | e.g. `api://<staatemail-app-id>/.default` |
+| `STAATEMAIL_TENANT_ID`, `STAATEMAIL_CLIENT_ID`, `STAATEMAIL_CLIENT_SECRET` | dedicated StaatEmail SPN — OAuth2 client-credentials flow (MSAL). Omit to fall back to the app's shared credential (local dev). |
+| `STAATEMAIL_SENDER_GPN`, `STAATEMAIL_FROM_GPN` | sender identity stamped on every `/sendEmail` |
+| `STAATEMAIL_FROM_ADDRESS`, `STAATEMAIL_SENDER_ADDRESS`, `STAATEMAIL_REPLY_TO` | sender/reply addresses |
+| `SCHEDULER_POLL_INTERVAL` | ISO-8601 batch/retry poll interval (`PT1H` hourly, `P1D` daily) |
+| `EMAIL_MAX_ATTACHMENT_BYTES`, `EMAIL_RETRY_WINDOW` | per-email size cap (35 MB default) and retry window (`P7D`) |
 
 The DB access token is requested for scope `https://ossrdbms-aad.database.windows.net/.default`
 and used as the PostgreSQL password via the driver's native dynamic-password support
@@ -120,8 +174,9 @@ passwordless starter covers JDBC only, this is the R2DBC equivalent). StaatEmail
 Bearer token for `STAATEMAIL_SCOPE` via `EntraBearerExchangeFilter`.
 
 > The application **never executes SQL/DDL scripts** (`spring.sql.init.mode=never`). The schema is
-> managed externally (DBA / deployment pipeline / migration tooling). `schema.sql` lives in
-> `src/test/resources` and is applied only to the embedded test database.
+> managed externally (DBA / deployment pipeline / migration tooling). `db/schema.sql` and
+> `db/seed.sql` live in `src/test/resources` and are applied only to the embedded test database.
+> The service role needs USAGE + DML on `aat_app` and USAGE + SELECT-only on `datamesh`.
 
 ## Build & containerize
 

@@ -4,8 +4,9 @@
 # Tests always connect to the LOCAL Zonky embedded PostgreSQL — never to an
 # Azure database. The embedded server runs on a random free port, which
 # AbstractIntegrationTest injects into spring.r2dbc.url at runtime; everything
-# static lives here. SQL init is enabled ONLY here: schema.sql (this folder)
-# is the DDL mirror of what the DBA/pipeline applies to real environments.
+# static lives here. SQL init is enabled ONLY here: db/schema.sql (this folder)
+# is the DDL mirror of what the DBA/pipeline applies to real environments, and
+# db/seed.sql provides idempotent reference data (templates + insight docs).
 # =============================================================================
 spring:
   r2dbc:
@@ -15,10 +16,15 @@ spring:
   sql:
     init:
       mode: always
+      schema-locations: classpath:db/schema.sql
+      data-locations: classpath:db/seed.sql
 
 app:
   datasource:
     passwordless-enabled: false
+  # No background polling during tests — scheduler passes are invoked explicitly when needed.
+  scheduler:
+    enabled: false
 
 logging:
   level:
