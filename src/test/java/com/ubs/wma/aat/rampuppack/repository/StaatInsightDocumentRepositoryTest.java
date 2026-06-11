@@ -2,13 +2,10 @@ package com.ubs.wma.aat.rampuppack.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
-
 import com.ubs.wma.aat.rampuppack.domain.StaatInsightDocument;
-
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-
 import reactor.test.StepVerifier;
 
 /**
@@ -33,7 +30,8 @@ class StaatInsightDocumentRepositoryTest extends RepositoryTestSupport {
 
     @Test
     void findsOnlyExistingDocumentsForMultipleAceIds() {
-        List<String> found = repository.findByAceIdIn(List.of("ACE-1001", "ACE-1002", "ACE-UNKNOWN"))
+        List<String> found = repository
+                .findByAceIdIn(List.of("ACE-1001", "ACE-1002", "ACE-UNKNOWN"))
                 .map(StaatInsightDocument::aceId)
                 .collectList()
                 .block();

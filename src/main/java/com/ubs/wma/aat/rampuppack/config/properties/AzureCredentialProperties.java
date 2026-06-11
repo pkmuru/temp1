@@ -12,8 +12,4 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * (system-assigned identity in Azure, Azure CLI login locally).
  */
 @ConfigurationProperties(prefix = "app.azure.credential")
-public record AzureCredentialProperties(
-        String tenantId,
-        String clientId,
-        String clientSecret) {
-}
+public record AzureCredentialProperties(String tenantId, String clientId, String clientSecret) {}

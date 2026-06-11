@@ -1,10 +1,8 @@
 package com.ubs.wma.aat.rampuppack;
 
+import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-
-import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
-
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -39,7 +37,6 @@ public abstract class AbstractIntegrationTest {
     /** Only the dynamic part (random embedded port) — all static test config is in application-test.yml. */
     @DynamicPropertySource
     static void registerDatasourceProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.r2dbc.url",
-                () -> "r2dbc:postgresql://localhost:" + POSTGRES.getPort() + "/postgres");
+        registry.add("spring.r2dbc.url", () -> "r2dbc:postgresql://localhost:" + POSTGRES.getPort() + "/postgres");
     }
 }

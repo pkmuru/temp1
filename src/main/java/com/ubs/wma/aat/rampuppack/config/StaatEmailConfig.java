@@ -2,10 +2,9 @@ package com.ubs.wma.aat.rampuppack.config;
 
 import com.azure.core.credential.TokenCredential;
 import com.azure.identity.ClientSecretCredentialBuilder;
-import com.ubs.wma.aat.rampuppack.config.properties.StaatEmailProperties;
 import com.ubs.wma.aat.rampuppack.client.staatemail.EntraBearerExchangeFilter;
 import com.ubs.wma.aat.rampuppack.client.staatemail.StaatEmailClient;
-
+import com.ubs.wma.aat.rampuppack.config.properties.StaatEmailProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -33,8 +32,7 @@ public class StaatEmailConfig {
     private static final Logger log = LoggerFactory.getLogger(StaatEmailConfig.class);
 
     @Bean
-    public WebClient staatEmailWebClient(TokenCredential azureTokenCredential,
-                                         StaatEmailProperties props) {
+    public WebClient staatEmailWebClient(TokenCredential azureTokenCredential, StaatEmailProperties props) {
         TokenCredential credential = staatEmailCredential(props, azureTokenCredential);
         return WebClient.builder()
                 .baseUrl(props.baseUrl())
@@ -44,25 +42,28 @@ public class StaatEmailConfig {
 
     @Bean
     public StaatEmailClient staatEmailClient(WebClient staatEmailWebClient) {
-        HttpServiceProxyFactory factory = HttpServiceProxyFactory
-                .builderFor(WebClientAdapter.create(staatEmailWebClient))
+        HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(
+                        WebClientAdapter.create(staatEmailWebClient))
                 .build();
         return factory.createClient(StaatEmailClient.class);
     }
 
-    private static TokenCredential staatEmailCredential(StaatEmailProperties props,
-                                                        TokenCredential sharedCredential) {
+    private static TokenCredential staatEmailCredential(StaatEmailProperties props, TokenCredential sharedCredential) {
         if (props.hasDedicatedSpn()) {
-            log.info("StaatEmail auth: dedicated SPN '{}' via client-credentials flow, scope '{}'",
-                    props.clientId(), props.scope());
+            log.info(
+                    "StaatEmail auth: dedicated SPN '{}' via client-credentials flow, scope '{}'",
+                    props.clientId(),
+                    props.scope());
             return new ClientSecretCredentialBuilder()
                     .tenantId(props.tenantId())
                     .clientId(props.clientId())
                     .clientSecret(props.clientSecret())
                     .build();
         }
-        log.info("StaatEmail auth: no dedicated SPN configured — using the application's shared "
-                + "Azure credential, scope '{}'", props.scope());
+        log.info(
+                "StaatEmail auth: no dedicated SPN configured — using the application's shared "
+                        + "Azure credential, scope '{}'",
+                props.scope());
         return sharedCredential;
     }
 }

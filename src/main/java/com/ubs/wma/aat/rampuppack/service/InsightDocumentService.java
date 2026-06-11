@@ -1,16 +1,13 @@
 package com.ubs.wma.aat.rampuppack.service;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
 import com.ubs.wma.aat.rampuppack.domain.StaatInsightDocument;
 import com.ubs.wma.aat.rampuppack.exception.MissingInsightDocumentException;
 import com.ubs.wma.aat.rampuppack.exception.ResourceNotFoundException;
 import com.ubs.wma.aat.rampuppack.repository.StaatInsightDocumentRepository;
-
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Service;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -28,7 +25,8 @@ public class InsightDocumentService {
     }
 
     public Mono<StaatInsightDocument> findByAceId(String aceId) {
-        return repository.findByAceId(aceId)
+        return repository
+                .findByAceId(aceId)
                 .switchIfEmpty(Mono.error(new ResourceNotFoundException("STAAT insight document for ACE id", aceId)));
     }
 
@@ -43,7 +41,8 @@ public class InsightDocumentService {
      */
     public Mono<List<StaatInsightDocument>> requireAll(List<String> aceIds) {
         List<String> distinct = aceIds.stream().distinct().toList();
-        return repository.findByAceIdIn(distinct)
+        return repository
+                .findByAceIdIn(distinct)
                 .collectMap(StaatInsightDocument::aceId)
                 .flatMap(byAceId -> {
                     List<String> missing = distinct.stream()
@@ -55,8 +54,8 @@ public class InsightDocumentService {
                 });
     }
 
-    private static List<StaatInsightDocument> orderedDocuments(List<String> aceIds,
-                                                               Map<String, StaatInsightDocument> byAceId) {
+    private static List<StaatInsightDocument> orderedDocuments(
+            List<String> aceIds, Map<String, StaatInsightDocument> byAceId) {
         return aceIds.stream().map(byAceId::get).toList();
     }
 }

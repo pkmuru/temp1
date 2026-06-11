@@ -9,5 +9,4 @@ public record EmailPreviewPart(
         String subject,
         String htmlContent,
         List<String> aceIds,
-        List<String> attachmentFileNames) {
-}
+        List<String> attachmentFileNames) {}

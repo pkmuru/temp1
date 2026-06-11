@@ -5,11 +5,9 @@ import com.ubs.wma.aat.rampuppack.dto.EmailBatchRequest;
 import com.ubs.wma.aat.rampuppack.dto.EmailBatchResponse;
 import com.ubs.wma.aat.rampuppack.mapper.EmailMapper;
 import com.ubs.wma.aat.rampuppack.service.EmailBatchService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -38,7 +35,8 @@ public class EmailBatchController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Add a send request to the batch",
+    @Operation(
+            summary = "Add a send request to the batch",
             description = "The scheduler picks the entry up once scheduledAt is due (a past value "
                     + "is processed on the next poll).")
     public Mono<EmailBatchResponse> add(@Valid @RequestBody EmailBatchRequest request) {
@@ -58,7 +56,8 @@ public class EmailBatchController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Cancel a batch entry",
+    @Operation(
+            summary = "Cancel a batch entry",
             description = "Only possible while the entry is still SCHEDULED; returns the cancelled entry.")
     public Mono<EmailBatchResponse> cancel(@PathVariable Long id) {
         return service.cancel(id).map(EmailMapper::toResponse);

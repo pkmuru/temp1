@@ -3,9 +3,7 @@ package com.ubs.wma.aat.rampuppack.repository;
 import com.ubs.wma.aat.rampuppack.AbstractIntegrationTest;
 import com.ubs.wma.aat.rampuppack.config.AuditingConfig;
 import com.ubs.wma.aat.rampuppack.config.R2dbcConfig;
-
 import io.r2dbc.spi.ConnectionFactory;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.r2dbc.test.autoconfigure.DataR2dbcTest;
@@ -31,9 +29,7 @@ public abstract class RepositoryTestSupport extends AbstractIntegrationTest {
 
     @BeforeEach
     void applySchemaAndSeed() {
-        new ResourceDatabasePopulator(
-                new ClassPathResource("db/schema.sql"),
-                new ClassPathResource("db/seed.sql"))
+        new ResourceDatabasePopulator(new ClassPathResource("db/schema.sql"), new ClassPathResource("db/seed.sql"))
                 .populate(connectionFactory)
                 .block();
     }

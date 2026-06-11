@@ -7,11 +7,9 @@ import com.ubs.wma.aat.rampuppack.dto.EmailSendRequest;
 import com.ubs.wma.aat.rampuppack.dto.EmailSendResponse;
 import com.ubs.wma.aat.rampuppack.mapper.EmailMapper;
 import com.ubs.wma.aat.rampuppack.service.EmailSendService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -36,7 +33,8 @@ public class EmailController {
     }
 
     @PostMapping("/send")
-    @Operation(summary = "Send retention packs by email now",
+    @Operation(
+            summary = "Send retention packs by email now",
             description = "Fetches the STAAT documents for the given ACE ids, merges the template and "
                     + "delivers via StaatEmail — split into sequential parts when attachments exceed "
                     + "the size cap. Failed parts are retried automatically by the scheduler.")
@@ -45,7 +43,8 @@ public class EmailController {
     }
 
     @PostMapping("/preview")
-    @Operation(summary = "Preview a send without delivering it",
+    @Operation(
+            summary = "Preview a send without delivering it",
             description = "Same payload and pipeline as /send — templates resolved, documents "
                     + "fetched, merge fields applied, size-based splitting — but the merged "
                     + "subject and HTML body are returned to the UI instead of being sent to "
@@ -55,10 +54,11 @@ public class EmailController {
     }
 
     @GetMapping
-    @Operation(summary = "List sent/attempted emails",
+    @Operation(
+            summary = "List sent/attempted emails",
             description = "Optionally filtered by status and/or originating batch.")
-    public Flux<EmailLogResponse> list(@RequestParam(required = false) EmailStatus status,
-                                       @RequestParam(required = false) Long batchId) {
+    public Flux<EmailLogResponse> list(
+            @RequestParam(required = false) EmailStatus status, @RequestParam(required = false) Long batchId) {
         return service.findLogs(status, batchId).map(EmailMapper::toResponse);
     }
 

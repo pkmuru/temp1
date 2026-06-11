@@ -1,7 +1,6 @@
 package com.ubs.wma.aat.rampuppack.config.properties;
 
 import java.time.Duration;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
@@ -15,6 +14,4 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @ConfigurationProperties(prefix = "app.email")
 public record EmailProperties(
-        @DefaultValue("36700160") long maxAttachmentBytes,
-        @DefaultValue("P7D") Duration retryWindow) {
-}
+        @DefaultValue("36700160") long maxAttachmentBytes, @DefaultValue("P7D") Duration retryWindow) {}

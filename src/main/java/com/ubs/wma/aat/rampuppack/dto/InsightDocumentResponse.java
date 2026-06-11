@@ -10,5 +10,4 @@ public record InsightDocumentResponse(
         String fileName,
         String htmlContent,
         Instant createdAt,
-        Instant updatedAt) {
-}
+        Instant updatedAt) {}

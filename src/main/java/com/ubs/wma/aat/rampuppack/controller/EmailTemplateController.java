@@ -4,11 +4,9 @@ import com.ubs.wma.aat.rampuppack.dto.EmailTemplateRequest;
 import com.ubs.wma.aat.rampuppack.dto.EmailTemplateResponse;
 import com.ubs.wma.aat.rampuppack.mapper.EmailTemplateMapper;
 import com.ubs.wma.aat.rampuppack.service.EmailTemplateService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -57,14 +54,14 @@ public class EmailTemplateController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update an existing email template")
-    public Mono<EmailTemplateResponse> update(@PathVariable Long id,
-                                              @Valid @RequestBody EmailTemplateRequest request) {
+    public Mono<EmailTemplateResponse> update(@PathVariable Long id, @Valid @RequestBody EmailTemplateRequest request) {
         return service.update(id, EmailTemplateMapper.toEntity(request)).map(EmailTemplateMapper::toResponse);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Delete an email template",
+    @Operation(
+            summary = "Delete an email template",
             description = "Fails with 409 when the template is referenced by sent emails or batches.")
     public Mono<Void> delete(@PathVariable Long id) {
         return service.delete(id);

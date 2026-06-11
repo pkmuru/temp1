@@ -17,5 +17,4 @@ public record StaatSendRequest(
         String senderAddress,
         List<MailRecipient> recipients,
         String applicationName,
-        MailRequestDetails mailDetails) {
-}
+        MailRequestDetails mailDetails) {}

@@ -3,7 +3,6 @@ package com.ubs.wma.aat.rampuppack.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 
 class TemplateMergerTest {
@@ -11,16 +10,14 @@ class TemplateMergerTest {
     @Test
     void replacesPlaceholdersIncludingNamesWithSpaces() {
         String merged = TemplateMerger.merge(
-                "Hi {FA Name}, you have {packCount} packs.",
-                Map.of("FA Name", "Alex Advisor", "packCount", "3"));
+                "Hi {FA Name}, you have {packCount} packs.", Map.of("FA Name", "Alex Advisor", "packCount", "3"));
 
         assertThat(merged).isEqualTo("Hi Alex Advisor, you have 3 packs.");
     }
 
     @Test
     void leavesUnknownPlaceholdersVisible() {
-        String merged = TemplateMerger.merge("Hi {faName}, see {unknownField}.",
-                Map.of("faName", "Alex"));
+        String merged = TemplateMerger.merge("Hi {faName}, see {unknownField}.", Map.of("faName", "Alex"));
 
         assertThat(merged).isEqualTo("Hi Alex, see {unknownField}.");
     }

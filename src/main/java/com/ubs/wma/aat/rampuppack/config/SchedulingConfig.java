@@ -11,5 +11,4 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @Configuration(proxyBeanMethods = false)
 @EnableScheduling
 @ConditionalOnProperty(name = "app.scheduler.enabled", havingValue = "true", matchIfMissing = true)
-public class SchedulingConfig {
-}
+public class SchedulingConfig {}

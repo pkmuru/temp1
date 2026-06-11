@@ -1,10 +1,5 @@
 package com.ubs.wma.aat.rampuppack.service;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-import java.util.Objects;
-
 import com.ubs.wma.aat.rampuppack.config.properties.EmailProperties;
 import com.ubs.wma.aat.rampuppack.config.properties.SchedulerProperties;
 import com.ubs.wma.aat.rampuppack.domain.BatchStatus;
@@ -14,13 +9,15 @@ import com.ubs.wma.aat.rampuppack.domain.EmailStatus;
 import com.ubs.wma.aat.rampuppack.mapper.EmailMapper;
 import com.ubs.wma.aat.rampuppack.repository.EmailBatchRepository;
 import com.ubs.wma.aat.rampuppack.repository.EmailLogRepository;
-
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
 import reactor.core.publisher.Mono;
 
 /**
@@ -49,11 +46,12 @@ public class EmailDeliveryScheduler {
     private final SchedulerProperties schedulerProperties;
     private final EmailProperties emailProperties;
 
-    public EmailDeliveryScheduler(EmailBatchRepository batchRepository,
-                                  EmailLogRepository emailLogRepository,
-                                  EmailSendService emailSendService,
-                                  SchedulerProperties schedulerProperties,
-                                  EmailProperties emailProperties) {
+    public EmailDeliveryScheduler(
+            EmailBatchRepository batchRepository,
+            EmailLogRepository emailLogRepository,
+            EmailSendService emailSendService,
+            SchedulerProperties schedulerProperties,
+            EmailProperties emailProperties) {
         this.batchRepository = batchRepository;
         this.emailLogRepository = emailLogRepository;
         this.emailSendService = emailSendService;
@@ -70,7 +68,8 @@ public class EmailDeliveryScheduler {
 
     public void processDueBatches() {
         try {
-            Long processed = batchRepository.claimDue(schedulerProperties.claimLimit())
+            Long processed = batchRepository
+                    .claimDue(schedulerProperties.claimLimit())
                     .concatMap(this::processBatch)
                     .count()
                     .block(PASS_TIMEOUT);
@@ -85,7 +84,8 @@ public class EmailDeliveryScheduler {
     public void retryFailedDeliveries() {
         Instant cutoff = Instant.now().minus(emailProperties.retryWindow());
         try {
-            Long retried = emailLogRepository.claimRetryable(cutoff, schedulerProperties.claimLimit())
+            Long retried = emailLogRepository
+                    .claimRetryable(cutoff, schedulerProperties.claimLimit())
                     .concatMap(emailSendService::retry)
                     .count()
                     .block(PASS_TIMEOUT);
@@ -100,13 +100,17 @@ public class EmailDeliveryScheduler {
     public void exhaustExpiredRetries() {
         Instant cutoff = Instant.now().minus(emailProperties.retryWindow());
         try {
-            List<EmailLog> exhausted = emailLogRepository.markExhausted(cutoff).collectList().block(PASS_TIMEOUT);
+            List<EmailLog> exhausted =
+                    emailLogRepository.markExhausted(cutoff).collectList().block(PASS_TIMEOUT);
             if (exhausted != null) {
                 // Requirement: after 7 days stop retrying and log the failure for follow-up.
                 exhausted.forEach(row -> log.warn(
                         "Email delivery EXHAUSTED after retry window — email_log {} to {} (first attempt {}, "
                                 + "{} attempts, last reason: {})",
-                        row.id(), row.recipientEmail(), row.firstAttemptedAt(), row.attemptCount(),
+                        row.id(),
+                        row.recipientEmail(),
+                        row.firstAttemptedAt(),
+                        row.attemptCount(),
                         row.failureReason()));
             }
         } catch (RuntimeException e) {
@@ -115,22 +119,25 @@ public class EmailDeliveryScheduler {
     }
 
     private Mono<EmailBatch> processBatch(EmailBatch batch) {
-        return emailSendService.send(EmailMapper.toSendRequest(batch), batch.id())
+        return emailSendService
+                .send(EmailMapper.toSendRequest(batch), batch.id())
                 .map(parts -> {
                     boolean allSent = parts.stream().allMatch(part -> part.status() == EmailStatus.SENT);
-                    String reason = allSent ? null : parts.stream()
-                            .filter(part -> part.status() != EmailStatus.SENT)
-                            .map(EmailLog::failureReason)
-                            .filter(Objects::nonNull)
-                            .findFirst()
-                            .orElse("one or more parts failed to send");
-                    return batch.asProcessed(allSent ? BatchStatus.COMPLETED : BatchStatus.FAILED,
-                            reason, Instant.now());
+                    String reason = allSent
+                            ? null
+                            : parts.stream()
+                                    .filter(part -> part.status() != EmailStatus.SENT)
+                                    .map(EmailLog::failureReason)
+                                    .filter(Objects::nonNull)
+                                    .findFirst()
+                                    .orElse("one or more parts failed to send");
+                    return batch.asProcessed(
+                            allSent ? BatchStatus.COMPLETED : BatchStatus.FAILED, reason, Instant.now());
                 })
                 .onErrorResume(e -> {
                     log.error("Email batch {} failed before dispatch", batch.id(), e);
-                    return Mono.just(batch.asProcessed(BatchStatus.FAILED,
-                            EmailSendService.failureReason(e), Instant.now()));
+                    return Mono.just(
+                            batch.asProcessed(BatchStatus.FAILED, EmailSendService.failureReason(e), Instant.now()));
                 })
                 .flatMap(batchRepository::save);
     }

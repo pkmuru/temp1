@@ -1,13 +1,10 @@
 package com.ubs.wma.aat.rampuppack.repository;
 
-import java.time.Instant;
-
 import com.ubs.wma.aat.rampuppack.domain.EmailLog;
 import com.ubs.wma.aat.rampuppack.domain.EmailStatus;
-
+import java.time.Instant;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
-
 import reactor.core.publisher.Flux;
 
 public interface EmailLogRepository extends ReactiveCrudRepository<EmailLog, Long> {
@@ -22,7 +19,8 @@ public interface EmailLogRepository extends ReactiveCrudRepository<EmailLog, Lon
      * {@code now() - retry window}: rows whose first attempt is older than it are exhausted,
      * not retried. {@code FOR UPDATE SKIP LOCKED} keeps concurrent pollers disjoint.
      */
-    @Query("""
+    @Query(
+            """
             UPDATE aat_app.email_log
                SET status = 'SENDING', updated_at = now()
              WHERE id IN (SELECT id FROM aat_app.email_log
@@ -38,7 +36,8 @@ public interface EmailLogRepository extends ReactiveCrudRepository<EmailLog, Lon
      * Marks failed rows whose retry window has elapsed as {@code EXHAUSTED} and returns them so
      * the scheduler can log them for follow-up (requirement: cease retries after 7 days).
      */
-    @Query("""
+    @Query(
+            """
             UPDATE aat_app.email_log
                SET status = 'EXHAUSTED', updated_at = now()
              WHERE status = 'FAILED' AND first_attempted_at <= :cutoff

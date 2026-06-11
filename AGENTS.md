@@ -18,6 +18,7 @@ azure-identity **1.18.3** · Jackson **3** (`tools.jackson`) · Zonky embedded-p
 ```bash
 mvn compile                 # compile
 mvn test                    # full suite — embedded PostgreSQL, no Docker, no Azure needed
+mvn spotless:apply          # format (palantir-java-format; spotless:check enforced at verify)
 mvn spring-boot:run         # run (see README/.env for env vars; profile via SPRING_PROFILES_ACTIVE)
 # interactive dev DB on port 5433 with schema+seed applied:
 mvn -q org.codehaus.mojo:exec-maven-plugin:3.5.0:java -Dexec.classpathScope=test \
@@ -113,6 +114,17 @@ real PG binaries as a subprocess; never reintroduce Testcontainers.
 
 ## Testing conventions
 
+- Controller tests: `@WebFluxTest(XxxController.class)` (from
+  `org.springframework.boot.webflux.test.autoconfigure`) + `@MockitoBean` service — test the
+  web contract only: routing, status codes, `@Valid` failures (assert 400 + the service had no
+  interactions), enum/param binding, ProblemDetail mapping (the `@RestControllerAdvice` is part
+  of the slice). Don't re-test business logic there; that belongs to `EmailDeliveryFlowTest`.
+  Request bodies are raw JSON text blocks (catches field renames); validation-failure cases are
+  one `@ParameterizedTest(name = "{0}")` + `@MethodSource` matrix of (description, body,
+  expected-detail-substring) per endpoint — add a new row, not a new test method.
+- Entity fixtures for slice/unit tests come from `TestData` (root test package): fully populated
+  records with fixed timestamps. Don't use it for tests that persist rows — those keep creating
+  their own data with unique marker values.
 - Repository tests: extend `repository/RepositoryTestSupport` (`@DataR2dbcTest`, imports, applies
   `db/schema.sql` + `db/seed.sql` per test). R2DBC slice tests do **not** roll back — use unique
   marker values (template codes, faIds) per test and write containment assertions, not exact

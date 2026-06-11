@@ -1,11 +1,8 @@
 package com.ubs.wma.aat.rampuppack.repository;
 
-import java.util.Collection;
-
 import com.ubs.wma.aat.rampuppack.domain.StaatInsightDocument;
-
+import java.util.Collection;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

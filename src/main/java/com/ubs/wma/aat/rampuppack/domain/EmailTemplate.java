@@ -1,7 +1,6 @@
 package com.ubs.wma.aat.rampuppack.domain;
 
 import java.time.Instant;
-
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -32,16 +31,25 @@ public record EmailTemplate(
         @Column("updated_at") @LastModifiedDate Instant updatedAt) {
 
     /** A new, transient template: no id and no audit values (assigned on persist). */
-    public static EmailTemplate newTemplate(String code, String name, String description,
-                                            String subject, String body, boolean active) {
-        return new EmailTemplate(null, code, name, description, subject, body, active,
-                null, null, null, null);
+    public static EmailTemplate newTemplate(
+            String code, String name, String description, String subject, String body, boolean active) {
+        return new EmailTemplate(null, code, name, description, subject, body, active, null, null, null, null);
     }
 
     /** A copy with the editable fields replaced, preserving id and audit values. */
-    public EmailTemplate withChanges(String code, String name, String description,
-                                     String subject, String body, boolean active) {
-        return new EmailTemplate(this.id, code, name, description, subject, body, active,
-                this.createdBy, this.updatedBy, this.createdAt, this.updatedAt);
+    public EmailTemplate withChanges(
+            String code, String name, String description, String subject, String body, boolean active) {
+        return new EmailTemplate(
+                this.id,
+                code,
+                name,
+                description,
+                subject,
+                body,
+                active,
+                this.createdBy,
+                this.updatedBy,
+                this.createdAt,
+                this.updatedAt);
     }
 }

@@ -33,8 +33,6 @@ public record StaatEmailProperties(
 
     /** True when the dedicated StaatEmail SPN is fully configured. */
     public boolean hasDedicatedSpn() {
-        return StringUtils.hasText(tenantId)
-                && StringUtils.hasText(clientId)
-                && StringUtils.hasText(clientSecret);
+        return StringUtils.hasText(tenantId) && StringUtils.hasText(clientId) && StringUtils.hasText(clientSecret);
     }
 }

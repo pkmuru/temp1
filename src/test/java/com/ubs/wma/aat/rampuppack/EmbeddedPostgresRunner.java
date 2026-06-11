@@ -1,12 +1,10 @@
 package com.ubs.wma.aat.rampuppack;
 
+import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-
 import javax.sql.DataSource;
-
-import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 
 /**
  * Dev utility (not a test) — starts the SAME Zonky embedded PostgreSQL the integration tests use,
@@ -36,30 +34,30 @@ public final class EmbeddedPostgresRunner {
 
     private static final int PORT = 5433;
 
-    private EmbeddedPostgresRunner() {
-    }
+    private EmbeddedPostgresRunner() {}
 
     public static void main(String[] args) throws Exception {
         try (EmbeddedPostgres pg = EmbeddedPostgres.builder().setPort(PORT).start()) {
 
             DataSource ds = pg.getPostgresDatabase();
-            try (Connection c = ds.getConnection(); Statement st = c.createStatement()) {
+            try (Connection c = ds.getConnection();
+                    Statement st = c.createStatement()) {
                 st.execute(readClasspathFile("/db/schema.sql"));
                 st.execute(readClasspathFile("/db/seed.sql"));
 
                 // Example of querying the embedded DB programmatically (plain JDBC):
                 System.out.println("---- seeded data ----");
-                try (ResultSet rs = st.executeQuery(
-                        "SELECT id, code FROM aat_app.email_template ORDER BY id")) {
+                try (ResultSet rs = st.executeQuery("SELECT id, code FROM aat_app.email_template ORDER BY id")) {
                     while (rs.next()) {
-                        System.out.printf("  aat_app.email_template id=%d  code=%s%n",
-                                rs.getLong("id"), rs.getString("code"));
+                        System.out.printf(
+                                "  aat_app.email_template id=%d  code=%s%n", rs.getLong("id"), rs.getString("code"));
                     }
                 }
                 try (ResultSet rs = st.executeQuery(
                         "SELECT ace_id, lead_client_name FROM datamesh.staat_insight_document ORDER BY id")) {
                     while (rs.next()) {
-                        System.out.printf("  datamesh.staat_insight_document ace_id=%-9s  lead_client=%s%n",
+                        System.out.printf(
+                                "  datamesh.staat_insight_document ace_id=%-9s  lead_client=%s%n",
                                 rs.getString("ace_id"), rs.getString("lead_client_name"));
                     }
                 }

@@ -1,10 +1,9 @@
 package com.ubs.wma.aat.rampuppack.dto;
 
+import com.ubs.wma.aat.rampuppack.domain.BatchStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-
-import com.ubs.wma.aat.rampuppack.domain.BatchStatus;
 
 public record EmailBatchResponse(
         Long id,
@@ -22,5 +21,4 @@ public record EmailBatchResponse(
         String createdBy,
         String updatedBy,
         Instant createdAt,
-        Instant updatedAt) {
-}
+        Instant updatedAt) {}

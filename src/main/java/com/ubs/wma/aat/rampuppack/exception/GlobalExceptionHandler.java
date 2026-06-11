@@ -2,7 +2,6 @@ package com.ubs.wma.aat.rampuppack.exception;
 
 import java.net.URI;
 import java.util.stream.Collectors;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -51,8 +50,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
         log.debug("Data integrity violation", ex);
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
-                "The request conflicts with existing data (duplicate key or referenced rows).");
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, "The request conflicts with existing data (duplicate key or referenced rows).");
         problem.setTitle("Data conflict");
         problem.setType(URI.create("https://docs.ubs.com/wma/aat/errors/data-conflict"));
         return problem;
@@ -75,8 +74,8 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(ServerWebInputException.class)
     public ProblemDetail handleBadInput(ServerWebInputException ex) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
-                "Request body is missing, malformed, or contains an invalid value.");
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, "Request body is missing, malformed, or contains an invalid value.");
         problem.setTitle("Bad request");
         problem.setType(URI.create("https://docs.ubs.com/wma/aat/errors/bad-request"));
         return problem;
@@ -86,8 +85,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleUnexpected(Exception ex) {
         log.error("Unhandled exception", ex);
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
-                "An unexpected error occurred.");
+        ProblemDetail problem =
+                ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.");
         problem.setTitle("Internal server error");
         problem.setType(URI.create("https://docs.ubs.com/wma/aat/errors/internal"));
         return problem;

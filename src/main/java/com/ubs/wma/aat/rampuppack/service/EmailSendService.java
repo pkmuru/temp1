@@ -1,14 +1,5 @@
 package com.ubs.wma.aat.rampuppack.service;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import com.ubs.wma.aat.rampuppack.client.staatemail.StaatEmailClient;
 import com.ubs.wma.aat.rampuppack.client.staatemail.dto.AttachmentRef;
 import com.ubs.wma.aat.rampuppack.client.staatemail.dto.MailRecipient;
@@ -26,11 +17,17 @@ import com.ubs.wma.aat.rampuppack.dto.EmailSendRequest;
 import com.ubs.wma.aat.rampuppack.exception.ResourceNotFoundException;
 import com.ubs.wma.aat.rampuppack.mapper.EmailMapper;
 import com.ubs.wma.aat.rampuppack.repository.EmailLogRepository;
-
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -65,12 +62,13 @@ public class EmailSendService {
     private final StaatEmailProperties staatEmailProperties;
     private final EmailProperties emailProperties;
 
-    public EmailSendService(EmailTemplateService templateService,
-                            InsightDocumentService insightDocumentService,
-                            EmailLogRepository emailLogRepository,
-                            StaatEmailClient staatEmailClient,
-                            StaatEmailProperties staatEmailProperties,
-                            EmailProperties emailProperties) {
+    public EmailSendService(
+            EmailTemplateService templateService,
+            InsightDocumentService insightDocumentService,
+            EmailLogRepository emailLogRepository,
+            StaatEmailClient staatEmailClient,
+            StaatEmailProperties staatEmailProperties,
+            EmailProperties emailProperties) {
         this.templateService = templateService;
         this.insightDocumentService = insightDocumentService;
         this.emailLogRepository = emailLogRepository;
@@ -121,19 +119,18 @@ public class EmailSendService {
                 : insightDocumentService.requireAll(claimed.aceIds());
         return attachments
                 .flatMap(documents -> attempt(claimed, documents))
-                .onErrorResume(e -> emailLogRepository.save(
-                        claimed.asFailed(null, failureReason(e), Instant.now())));
+                .onErrorResume(e -> emailLogRepository.save(claimed.asFailed(null, failureReason(e), Instant.now())));
     }
 
     public Mono<EmailLog> findById(Long id) {
-        return emailLogRepository.findById(id)
+        return emailLogRepository
+                .findById(id)
                 .switchIfEmpty(Mono.error(new ResourceNotFoundException("Email log", id)));
     }
 
     public Flux<EmailLog> findLogs(EmailStatus status, Long batchId) {
         if (batchId != null) {
-            return emailLogRepository.findByBatchId(batchId)
-                    .filter(row -> status == null || row.status() == status);
+            return emailLogRepository.findByBatchId(batchId).filter(row -> status == null || row.status() == status);
         }
         return status != null ? emailLogRepository.findByStatus(status) : emailLogRepository.findAll();
     }
@@ -141,10 +138,8 @@ public class EmailSendService {
     // ------------------------------------------------- step 1: load context
 
     /** Everything the pipeline needs from the database: both templates and all insight documents. */
-    private record SendContext(EmailTemplate template,
-                               EmailTemplate failTemplate,
-                               List<StaatInsightDocument> documents) {
-    }
+    private record SendContext(
+            EmailTemplate template, EmailTemplate failTemplate, List<StaatInsightDocument> documents) {}
 
     private Mono<SendContext> loadContext(EmailSendRequest request) {
         return Mono.zip(
@@ -157,34 +152,48 @@ public class EmailSendService {
     // ---------------------------------------------- step 2: plan (pure Java)
 
     /** A pending log row with its merged content, plus the documents to attach to this part. */
-    private record PlannedPart(EmailLog pendingRow, List<StaatInsightDocument> documents) {
-    }
+    private record PlannedPart(EmailLog pendingRow, List<StaatInsightDocument> documents) {}
 
     /** Pure planning, no I/O: split the documents into parts and render each part's row. */
     private List<PlannedPart> planParts(EmailSendRequest request, Long batchId, SendContext context) {
-        List<List<StaatInsightDocument>> split =
-                splitBySize(context.documents(), emailProperties.maxAttachmentBytes());
+        List<List<StaatInsightDocument>> split = splitBySize(context.documents(), emailProperties.maxAttachmentBytes());
         List<PlannedPart> parts = new ArrayList<>(split.size());
         for (int index = 0; index < split.size(); index++) {
-            parts.add(planPart(request, batchId, context.template(), split.get(index),
-                    index + 1, split.size()));
+            parts.add(planPart(request, batchId, context.template(), split.get(index), index + 1, split.size()));
         }
         return parts;
     }
 
-    private PlannedPart planPart(EmailSendRequest request, Long batchId, EmailTemplate template,
-                                 List<StaatInsightDocument> documents, int partNumber, int totalParts) {
-        Map<String, String> fields = effectiveMergeFields(
-                request.mergeFields(), documents, partNumber, totalParts, null);
-        String subject = TemplateMerger.merge(template.subject(), fields)
-                + partSuffix(partNumber, totalParts);
+    private PlannedPart planPart(
+            EmailSendRequest request,
+            Long batchId,
+            EmailTemplate template,
+            List<StaatInsightDocument> documents,
+            int partNumber,
+            int totalParts) {
+        Map<String, String> fields =
+                effectiveMergeFields(request.mergeFields(), documents, partNumber, totalParts, null);
+        String subject = TemplateMerger.merge(template.subject(), fields) + partSuffix(partNumber, totalParts);
         String body = TemplateMerger.merge(template.body(), fields);
-        List<String> aceIds = documents.stream().map(StaatInsightDocument::aceId).toList();
-        List<String> fileNames = documents.stream().map(StaatInsightDocument::fileName).toList();
+        List<String> aceIds =
+                documents.stream().map(StaatInsightDocument::aceId).toList();
+        List<String> fileNames =
+                documents.stream().map(StaatInsightDocument::fileName).toList();
 
-        EmailLog pendingRow = EmailLog.pendingPart(batchId, template.id(), request.failTemplateId(),
-                request.faId(), request.fieldLeaderId(), request.recipientEmail(),
-                aceIds, fields, subject, body, fileNames, partNumber, totalParts);
+        EmailLog pendingRow = EmailLog.pendingPart(
+                batchId,
+                template.id(),
+                request.failTemplateId(),
+                request.faId(),
+                request.fieldLeaderId(),
+                request.recipientEmail(),
+                aceIds,
+                fields,
+                subject,
+                body,
+                fileNames,
+                partNumber,
+                totalParts);
         return new PlannedPart(pendingRow, documents);
     }
 
@@ -219,10 +228,12 @@ public class EmailSendService {
     // -------------------------------------------------- step 3: deliver
 
     private Mono<EmailLog> deliverPart(PlannedPart part, EmailTemplate failTemplate) {
-        return emailLogRepository.save(part.pendingRow())
+        return emailLogRepository
+                .save(part.pendingRow())
                 .flatMap(saved -> attempt(saved, part.documents()))
                 .flatMap(outcome -> isFirstFailure(outcome)
-                        ? notifyDeliveryFailure(outcome, failTemplate, part.documents()).thenReturn(outcome)
+                        ? notifyDeliveryFailure(outcome, failTemplate, part.documents())
+                                .thenReturn(outcome)
                         : Mono.just(outcome));
     }
 
@@ -240,8 +251,11 @@ public class EmailSendService {
                 .flatMap(refs -> staatEmailClient.sendEmail(buildSendRequest(smeId, emailLog, refs)))
                 .map(response -> emailLog.asSent(smeId, Instant.now()))
                 .onErrorResume(e -> {
-                    log.warn("Delivery attempt {} failed for email_log {} (recipient {}): {}",
-                            emailLog.attemptCount() + 1, emailLog.id(), emailLog.recipientEmail(),
+                    log.warn(
+                            "Delivery attempt {} failed for email_log {} (recipient {}): {}",
+                            emailLog.attemptCount() + 1,
+                            emailLog.id(),
+                            emailLog.recipientEmail(),
                             e.toString());
                     return Mono.just(emailLog.asFailed(smeId, failureReason(e), Instant.now()));
                 })
@@ -250,26 +264,27 @@ public class EmailSendService {
 
     /** Uploads sequentially and collects the attachment references for the send call. */
     private Mono<List<AttachmentRef>> uploadAttachments(List<StaatInsightDocument> documents) {
-        return Flux.fromIterable(documents)
-                .concatMap(this::uploadAttachment)
-                .collectList();
+        return Flux.fromIterable(documents).concatMap(this::uploadAttachment).collectList();
     }
 
     private Mono<AttachmentRef> uploadAttachment(StaatInsightDocument document) {
-        String contentBase64 = Base64.getEncoder()
-                .encodeToString(document.htmlContent().getBytes(StandardCharsets.UTF_8));
+        String contentBase64 =
+                Base64.getEncoder().encodeToString(document.htmlContent().getBytes(StandardCharsets.UTF_8));
         return staatEmailClient
                 .uploadAttachment(new UploadAttachmentRequest(document.fileName(), contentBase64))
                 .map(uploaded -> new AttachmentRef(uploaded.attachmentReferenceId(), uploaded.fileName()));
     }
 
-    private StaatSendRequest buildSendRequest(String smeId, EmailLog emailLog,
-                                              List<AttachmentRef> attachments) {
-        var mailDetails = new MailRequestDetails(emailLog.mergedSubject(),
-                staatEmailProperties.replyTo(), emailLog.mergedBody(), attachments);
-        return new StaatSendRequest(smeId, smeId,
-                staatEmailProperties.senderGpn(), staatEmailProperties.fromGpn(),
-                staatEmailProperties.fromAddress(), staatEmailProperties.senderAddress(),
+    private StaatSendRequest buildSendRequest(String smeId, EmailLog emailLog, List<AttachmentRef> attachments) {
+        var mailDetails = new MailRequestDetails(
+                emailLog.mergedSubject(), staatEmailProperties.replyTo(), emailLog.mergedBody(), attachments);
+        return new StaatSendRequest(
+                smeId,
+                smeId,
+                staatEmailProperties.senderGpn(),
+                staatEmailProperties.fromGpn(),
+                staatEmailProperties.fromAddress(),
+                staatEmailProperties.senderAddress(),
                 List.of(MailRecipient.to(emailLog.recipientEmail())),
                 staatEmailProperties.applicationName(),
                 mailDetails);
@@ -282,17 +297,25 @@ public class EmailSendService {
      * that just failed for the first time. The notice row never notifies again on its own failure
      * ({@code failureNotification=true}) and never breaks the original send's result.
      */
-    private Mono<Void> notifyDeliveryFailure(EmailLog failedPart, EmailTemplate failTemplate,
-                                             List<StaatInsightDocument> partDocuments) {
-        Map<String, String> fields = effectiveMergeFields(failedPart.mergeFields(), partDocuments,
-                failedPart.partNumber(), failedPart.totalParts(), failedPart.failureReason());
+    private Mono<Void> notifyDeliveryFailure(
+            EmailLog failedPart, EmailTemplate failTemplate, List<StaatInsightDocument> partDocuments) {
+        Map<String, String> fields = effectiveMergeFields(
+                failedPart.mergeFields(),
+                partDocuments,
+                failedPart.partNumber(),
+                failedPart.totalParts(),
+                failedPart.failureReason());
         String subject = TemplateMerger.merge(failTemplate.subject(), fields);
         String body = TemplateMerger.merge(failTemplate.body(), fields);
 
-        return emailLogRepository.save(EmailLog.failureNotice(failedPart, fields, subject, body))
+        return emailLogRepository
+                .save(EmailLog.failureNotice(failedPart, fields, subject, body))
                 .flatMap(notice -> attempt(notice, List.of()))
-                .doOnNext(notice -> log.info("Failure notification {} for email_log {} is {}",
-                        notice.id(), failedPart.id(), notice.status()))
+                .doOnNext(notice -> log.info(
+                        "Failure notification {} for email_log {} is {}",
+                        notice.id(),
+                        failedPart.id(),
+                        notice.status()))
                 .onErrorResume(e -> {
                     log.error("Could not record failure notification for email_log {}", failedPart.id(), e);
                     return Mono.empty();
@@ -307,10 +330,12 @@ public class EmailSendService {
      * {@code householdTable}, {@code partNumber}, {@code totalParts} and — for failure
      * notices — {@code failureReason}); system fields win on a name clash.
      */
-    private static Map<String, String> effectiveMergeFields(Map<String, String> callerFields,
-                                                            List<StaatInsightDocument> documents,
-                                                            int partNumber, int totalParts,
-                                                            String failureReason) {
+    private static Map<String, String> effectiveMergeFields(
+            Map<String, String> callerFields,
+            List<StaatInsightDocument> documents,
+            int partNumber,
+            int totalParts,
+            String failureReason) {
         Map<String, String> fields = new LinkedHashMap<>(callerFields);
         fields.put("packCount", String.valueOf(documents.size()));
         fields.put("householdTable", householdTable(documents));
@@ -329,8 +354,10 @@ public class EmailSendService {
         }
         StringBuilder table = new StringBuilder("<table><tr><th>Household Name</th><th>File Name</th></tr>");
         for (StaatInsightDocument document : documents) {
-            table.append("<tr><td>").append(document.leadClientName())
-                    .append("</td><td>").append(document.fileName())
+            table.append("<tr><td>")
+                    .append(document.leadClientName())
+                    .append("</td><td>")
+                    .append(document.fileName())
                     .append("</td></tr>");
         }
         return table.append("</table>").toString();
@@ -339,8 +366,6 @@ public class EmailSendService {
     /** Failure reason fitted to its column, shared with the scheduler. */
     static String failureReason(Throwable e) {
         String reason = e.getMessage() != null ? e.getMessage() : e.toString();
-        return reason.length() > FAILURE_REASON_MAX_LENGTH
-                ? reason.substring(0, FAILURE_REASON_MAX_LENGTH)
-                : reason;
+        return reason.length() > FAILURE_REASON_MAX_LENGTH ? reason.substring(0, FAILURE_REASON_MAX_LENGTH) : reason;
     }
 }

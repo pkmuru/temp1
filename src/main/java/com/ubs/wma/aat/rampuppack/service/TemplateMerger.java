@@ -9,8 +9,7 @@ import java.util.Map;
  */
 public final class TemplateMerger {
 
-    private TemplateMerger() {
-    }
+    private TemplateMerger() {}
 
     public static String merge(String template, Map<String, String> fields) {
         if (template == null || template.isEmpty() || fields.isEmpty()) {

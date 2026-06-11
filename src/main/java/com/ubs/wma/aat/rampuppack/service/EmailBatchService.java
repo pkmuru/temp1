@@ -5,9 +5,7 @@ import com.ubs.wma.aat.rampuppack.domain.EmailBatch;
 import com.ubs.wma.aat.rampuppack.exception.ConflictException;
 import com.ubs.wma.aat.rampuppack.exception.ResourceNotFoundException;
 import com.ubs.wma.aat.rampuppack.repository.EmailBatchRepository;
-
 import org.springframework.stereotype.Service;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -25,7 +23,8 @@ public class EmailBatchService {
 
     /** Validates both templates up front so a bad reference fails at enqueue time, not at send time. */
     public Mono<EmailBatch> schedule(EmailBatch batch) {
-        return templateService.requireActive(batch.templateId())
+        return templateService
+                .requireActive(batch.templateId())
                 .then(templateService.requireActive(batch.failTemplateId()))
                 .then(repository.save(batch));
     }
@@ -35,15 +34,15 @@ public class EmailBatchService {
     }
 
     public Mono<EmailBatch> findById(Long id) {
-        return repository.findById(id)
-                .switchIfEmpty(Mono.error(new ResourceNotFoundException("Email batch", id)));
+        return repository.findById(id).switchIfEmpty(Mono.error(new ResourceNotFoundException("Email batch", id)));
     }
 
     /** Cancels a batch entry that has not started processing yet. */
     public Mono<EmailBatch> cancel(Long id) {
-        return findById(id).flatMap(batch -> batch.status() == BatchStatus.SCHEDULED
-                ? repository.save(batch.asCancelled())
-                : Mono.error(new ConflictException(
-                        "Email batch %d is %s and can no longer be cancelled".formatted(id, batch.status()))));
+        return findById(id)
+                .flatMap(batch -> batch.status() == BatchStatus.SCHEDULED
+                        ? repository.save(batch.asCancelled())
+                        : Mono.error(new ConflictException(
+                                "Email batch %d is %s and can no longer be cancelled".formatted(id, batch.status()))));
     }
 }

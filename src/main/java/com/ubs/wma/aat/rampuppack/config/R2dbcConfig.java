@@ -1,14 +1,9 @@
 package com.ubs.wma.aat.rampuppack.config;
 
-import java.util.Map;
-
 import com.ubs.wma.aat.rampuppack.domain.BatchStatus;
 import com.ubs.wma.aat.rampuppack.domain.EmailStatus;
-
 import io.r2dbc.postgresql.codec.Json;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.json.JsonMapper;
-
+import java.util.Map;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -17,6 +12,8 @@ import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.r2dbc.config.EnableR2dbcAuditing;
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
 import org.springframework.data.r2dbc.dialect.PostgresDialect;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * R2DBC data-mapping configuration:
@@ -81,8 +78,7 @@ public class R2dbcConfig {
 
     @ReadingConverter
     static final class MergeFieldsReadingConverter implements Converter<Json, Map<String, String>> {
-        private static final TypeReference<Map<String, String>> MAP_TYPE = new TypeReference<>() {
-        };
+        private static final TypeReference<Map<String, String>> MAP_TYPE = new TypeReference<>() {};
 
         private final JsonMapper jsonMapper;
 

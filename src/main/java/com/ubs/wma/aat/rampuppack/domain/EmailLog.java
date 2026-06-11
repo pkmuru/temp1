@@ -3,7 +3,6 @@ package com.ubs.wma.aat.rampuppack.domain;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -50,28 +49,80 @@ public record EmailLog(
         @Column("updated_at") @LastModifiedDate Instant updatedAt) {
 
     /** A new, transient part row awaiting its first delivery attempt. */
-    public static EmailLog pendingPart(Long batchId, Long templateId, Long failTemplateId,
-                                       String faId, String fieldLeaderId, String recipientEmail,
-                                       List<String> aceIds, Map<String, String> mergeFields,
-                                       String mergedSubject, String mergedBody,
-                                       List<String> attachmentFileNames,
-                                       int partNumber, int totalParts) {
-        return new EmailLog(null, batchId, templateId, failTemplateId, faId, fieldLeaderId,
-                recipientEmail, List.copyOf(aceIds), Map.copyOf(mergeFields), mergedSubject,
-                mergedBody, List.copyOf(attachmentFileNames), partNumber, totalParts, false, null,
-                EmailStatus.PENDING, 0, null, null, null, null, null, null, null);
+    public static EmailLog pendingPart(
+            Long batchId,
+            Long templateId,
+            Long failTemplateId,
+            String faId,
+            String fieldLeaderId,
+            String recipientEmail,
+            List<String> aceIds,
+            Map<String, String> mergeFields,
+            String mergedSubject,
+            String mergedBody,
+            List<String> attachmentFileNames,
+            int partNumber,
+            int totalParts) {
+        return new EmailLog(
+                null,
+                batchId,
+                templateId,
+                failTemplateId,
+                faId,
+                fieldLeaderId,
+                recipientEmail,
+                List.copyOf(aceIds),
+                Map.copyOf(mergeFields),
+                mergedSubject,
+                mergedBody,
+                List.copyOf(attachmentFileNames),
+                partNumber,
+                totalParts,
+                false,
+                null,
+                EmailStatus.PENDING,
+                0,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
     }
 
     /**
      * A new, transient failure-notification row derived from a failed part: same recipient and
      * ACE context, no attachments, and {@code failTemplateId=null} so it never notifies again.
      */
-    public static EmailLog failureNotice(EmailLog failedPart, Map<String, String> mergeFields,
-                                         String mergedSubject, String mergedBody) {
-        return new EmailLog(null, failedPart.batchId(), failedPart.failTemplateId(), null,
-                failedPart.faId(), failedPart.fieldLeaderId(), failedPart.recipientEmail(),
-                failedPart.aceIds(), Map.copyOf(mergeFields), mergedSubject, mergedBody, List.of(),
-                1, 1, true, null, EmailStatus.PENDING, 0, null, null, null, null, null, null, null);
+    public static EmailLog failureNotice(
+            EmailLog failedPart, Map<String, String> mergeFields, String mergedSubject, String mergedBody) {
+        return new EmailLog(
+                null,
+                failedPart.batchId(),
+                failedPart.failTemplateId(),
+                null,
+                failedPart.faId(),
+                failedPart.fieldLeaderId(),
+                failedPart.recipientEmail(),
+                failedPart.aceIds(),
+                Map.copyOf(mergeFields),
+                mergedSubject,
+                mergedBody,
+                List.of(),
+                1,
+                1,
+                true,
+                null,
+                EmailStatus.PENDING,
+                0,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
     }
 
     /** A copy recording a successful delivery attempt. */
@@ -85,10 +136,31 @@ public record EmailLog(
     }
 
     private EmailLog attempted(EmailStatus outcome, String smeId, String failureReason, Instant attemptedAt) {
-        return new EmailLog(id, batchId, templateId, failTemplateId, faId, fieldLeaderId,
-                recipientEmail, aceIds, mergeFields, mergedSubject, mergedBody, attachmentFileNames,
-                partNumber, totalParts, failureNotification, smeId, outcome, attemptCount + 1,
-                firstAttemptedAt != null ? firstAttemptedAt : attemptedAt, attemptedAt,
-                failureReason, createdBy, updatedBy, createdAt, updatedAt);
+        return new EmailLog(
+                id,
+                batchId,
+                templateId,
+                failTemplateId,
+                faId,
+                fieldLeaderId,
+                recipientEmail,
+                aceIds,
+                mergeFields,
+                mergedSubject,
+                mergedBody,
+                attachmentFileNames,
+                partNumber,
+                totalParts,
+                failureNotification,
+                smeId,
+                outcome,
+                attemptCount + 1,
+                firstAttemptedAt != null ? firstAttemptedAt : attemptedAt,
+                attemptedAt,
+                failureReason,
+                createdBy,
+                updatedBy,
+                createdAt,
+                updatedAt);
     }
 }

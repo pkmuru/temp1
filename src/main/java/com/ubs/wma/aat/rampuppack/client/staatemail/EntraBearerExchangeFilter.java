@@ -3,12 +3,10 @@ package com.ubs.wma.aat.rampuppack.client.staatemail;
 import com.azure.core.credential.AccessToken;
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.credential.TokenRequestContext;
-
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
-
 import reactor.core.publisher.Mono;
 
 /**
@@ -32,7 +30,8 @@ public class EntraBearerExchangeFilter implements ExchangeFilterFunction {
 
     @Override
     public Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next) {
-        return credential.getToken(tokenRequest)
+        return credential
+                .getToken(tokenRequest)
                 .map(AccessToken::getToken)
                 .map(token -> ClientRequest.from(request)
                         .headers(headers -> headers.setBearerAuth(token))

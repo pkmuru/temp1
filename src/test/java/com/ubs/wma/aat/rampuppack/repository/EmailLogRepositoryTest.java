@@ -2,15 +2,13 @@ package com.ubs.wma.aat.rampuppack.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.ubs.wma.aat.rampuppack.domain.EmailLog;
+import com.ubs.wma.aat.rampuppack.domain.EmailStatus;
+import com.ubs.wma.aat.rampuppack.domain.EmailTemplate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
-
-import com.ubs.wma.aat.rampuppack.domain.EmailLog;
-import com.ubs.wma.aat.rampuppack.domain.EmailStatus;
-import com.ubs.wma.aat.rampuppack.domain.EmailTemplate;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -44,7 +42,8 @@ class EmailLogRepositoryTest extends RepositoryTestSupport {
         EmailLog failedRecently = saveFailed("LOG_REPO_RECENT", Instant.now().minus(1, ChronoUnit.HOURS));
         EmailLog failedLongAgo = saveFailed("LOG_REPO_OLD", Instant.now().minus(8, ChronoUnit.DAYS));
 
-        List<EmailLog> claimed = repository.claimRetryable(cutoff, 100).collectList().block();
+        List<EmailLog> claimed =
+                repository.claimRetryable(cutoff, 100).collectList().block();
         List<Long> claimedIds = claimed.stream().map(EmailLog::id).toList();
 
         assertThat(claimedIds).contains(failedRecently.id());
@@ -58,23 +57,37 @@ class EmailLogRepositoryTest extends RepositoryTestSupport {
         Instant cutoff = Instant.now().minus(7, ChronoUnit.DAYS);
         EmailLog failedLongAgo = saveFailed("LOG_REPO_EXHAUST", Instant.now().minus(8, ChronoUnit.DAYS));
 
-        List<EmailLog> exhausted = repository.markExhausted(cutoff).collectList().block();
+        List<EmailLog> exhausted =
+                repository.markExhausted(cutoff).collectList().block();
 
         assertThat(exhausted.stream().map(EmailLog::id)).contains(failedLongAgo.id());
-        assertThat(repository.findById(failedLongAgo.id()).block().status())
-                .isEqualTo(EmailStatus.EXHAUSTED);
+        assertThat(repository.findById(failedLongAgo.id()).block().status()).isEqualTo(EmailStatus.EXHAUSTED);
     }
 
     private EmailLog saveFailed(String templateCode, Instant firstAttemptedAt) {
         EmailLog pending = repository.save(pendingPart(templateCode)).block();
-        return repository.save(pending.asFailed("sme-x", "delivery failed", firstAttemptedAt)).block();
+        return repository
+                .save(pending.asFailed("sme-x", "delivery failed", firstAttemptedAt))
+                .block();
     }
 
     private EmailLog pendingPart(String templateCode) {
-        EmailTemplate template = templateRepository.save(EmailTemplate.newTemplate(
-                templateCode, templateCode, null, "s", "b", true)).block();
-        return EmailLog.pendingPart(null, template.id(), template.id(), "FA-1", null, "fa1@ubs.com",
-                List.of("ACE-1001", "ACE-1002"), Map.of("faName", "Alex Advisor"),
-                "Subject for Alex Advisor", "<p>merged body</p>", List.of("a.html", "b.html"), 1, 1);
+        EmailTemplate template = templateRepository
+                .save(EmailTemplate.newTemplate(templateCode, templateCode, null, "s", "b", true))
+                .block();
+        return EmailLog.pendingPart(
+                null,
+                template.id(),
+                template.id(),
+                "FA-1",
+                null,
+                "fa1@ubs.com",
+                List.of("ACE-1001", "ACE-1002"),
+                Map.of("faName", "Alex Advisor"),
+                "Subject for Alex Advisor",
+                "<p>merged body</p>",
+                List.of("a.html", "b.html"),
+                1,
+                1);
     }
 }

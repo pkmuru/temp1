@@ -1,7 +1,6 @@
 package com.ubs.wma.aat.rampuppack.config.properties;
 
 import java.time.Duration;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
@@ -15,5 +14,4 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 public record SchedulerProperties(
         @DefaultValue("true") boolean enabled,
         @DefaultValue("PT1H") Duration pollInterval,
-        @DefaultValue("25") int claimLimit) {
-}
+        @DefaultValue("25") int claimLimit) {}

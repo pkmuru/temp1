@@ -2,19 +2,16 @@ package com.ubs.wma.aat.rampuppack.client.staatemail;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.OffsetDateTime;
-import java.util.concurrent.atomic.AtomicReference;
-
 import com.azure.core.credential.AccessToken;
 import com.azure.core.credential.TokenCredential;
-
+import java.time.OffsetDateTime;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 import org.springframework.web.reactive.function.client.WebClient;
-
 import reactor.core.publisher.Mono;
 
 /**

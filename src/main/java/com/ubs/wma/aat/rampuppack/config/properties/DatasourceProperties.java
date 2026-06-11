@@ -1,7 +1,6 @@
 package com.ubs.wma.aat.rampuppack.config.properties;
 
 import java.time.Duration;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
@@ -28,6 +27,5 @@ public record DatasourceProperties(
     public record Pool(
             @DefaultValue("5") Integer initialSize,
             @DefaultValue("20") Integer maxSize,
-            @DefaultValue("30m") Duration maxIdleTime) {
-    }
+            @DefaultValue("30m") Duration maxIdleTime) {}
 }

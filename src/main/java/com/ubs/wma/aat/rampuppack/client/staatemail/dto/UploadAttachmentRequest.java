@@ -5,7 +5,4 @@ package com.ubs.wma.aat.rampuppack.client.staatemail.dto;
  * {@code /sendEmail}. {@code contentBase64} is the Base64-encoded file content (here: the UTF-8
  * bytes of a retention-pack HTML document).
  */
-public record UploadAttachmentRequest(
-        String fileName,
-        String contentBase64) {
-}
+public record UploadAttachmentRequest(String fileName, String contentBase64) {}

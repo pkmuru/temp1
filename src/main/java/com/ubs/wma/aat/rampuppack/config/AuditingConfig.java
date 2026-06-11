@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.ReactiveAuditorAware;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.WebFilter;
-
 import reactor.core.publisher.Mono;
 
 /**
@@ -36,7 +35,6 @@ public class AuditingConfig {
 
     @Bean
     public ReactiveAuditorAware<String> auditorAware() {
-        return () -> Mono.deferContextual(context ->
-                Mono.just(context.getOrDefault(CONTEXT_KEY, SYSTEM_AUDITOR)));
+        return () -> Mono.deferContextual(context -> Mono.just(context.getOrDefault(CONTEXT_KEY, SYSTEM_AUDITOR)));
     }
 }

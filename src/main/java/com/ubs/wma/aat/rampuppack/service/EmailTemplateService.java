@@ -4,9 +4,7 @@ import com.ubs.wma.aat.rampuppack.domain.EmailTemplate;
 import com.ubs.wma.aat.rampuppack.exception.ConflictException;
 import com.ubs.wma.aat.rampuppack.exception.ResourceNotFoundException;
 import com.ubs.wma.aat.rampuppack.repository.EmailTemplateRepository;
-
 import org.springframework.stereotype.Service;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -25,8 +23,7 @@ public class EmailTemplateService {
     }
 
     public Mono<EmailTemplate> findById(Long id) {
-        return repository.findById(id)
-                .switchIfEmpty(Mono.error(new ResourceNotFoundException("Email template", id)));
+        return repository.findById(id).switchIfEmpty(Mono.error(new ResourceNotFoundException("Email template", id)));
     }
 
     /** Resolves a template for sending: it must exist (404) and be active (409). */
@@ -42,9 +39,14 @@ public class EmailTemplateService {
     }
 
     public Mono<EmailTemplate> update(Long id, EmailTemplate changes) {
-        return findById(id).flatMap(existing -> repository.save(
-                existing.withChanges(changes.code(), changes.name(), changes.description(),
-                        changes.subject(), changes.body(), changes.active())));
+        return findById(id)
+                .flatMap(existing -> repository.save(existing.withChanges(
+                        changes.code(),
+                        changes.name(),
+                        changes.description(),
+                        changes.subject(),
+                        changes.body(),
+                        changes.active())));
     }
 
     /** Deleting a template referenced by sends/batches fails with a data-conflict (409). */

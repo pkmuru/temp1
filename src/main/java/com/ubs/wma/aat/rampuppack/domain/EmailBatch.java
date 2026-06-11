@@ -3,7 +3,6 @@ package com.ubs.wma.aat.rampuppack.domain;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -38,25 +37,73 @@ public record EmailBatch(
         @Column("updated_at") @LastModifiedDate Instant updatedAt) {
 
     /** A new, transient batch entry waiting for its schedule time. */
-    public static EmailBatch scheduled(String faId, String fieldLeaderId, String recipientEmail,
-                                       Long templateId, Long failTemplateId, List<String> aceIds,
-                                       Map<String, String> mergeFields, Instant scheduledAt) {
-        return new EmailBatch(null, faId, fieldLeaderId, recipientEmail, templateId, failTemplateId,
-                List.copyOf(aceIds), Map.copyOf(mergeFields), scheduledAt, BatchStatus.SCHEDULED,
-                null, null, null, null, null, null);
+    public static EmailBatch scheduled(
+            String faId,
+            String fieldLeaderId,
+            String recipientEmail,
+            Long templateId,
+            Long failTemplateId,
+            List<String> aceIds,
+            Map<String, String> mergeFields,
+            Instant scheduledAt) {
+        return new EmailBatch(
+                null,
+                faId,
+                fieldLeaderId,
+                recipientEmail,
+                templateId,
+                failTemplateId,
+                List.copyOf(aceIds),
+                Map.copyOf(mergeFields),
+                scheduledAt,
+                BatchStatus.SCHEDULED,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
     }
 
     /** A copy marked with the processing outcome ({@code COMPLETED} or {@code FAILED}). */
     public EmailBatch asProcessed(BatchStatus outcome, String failureReason, Instant processedAt) {
-        return new EmailBatch(id, faId, fieldLeaderId, recipientEmail, templateId, failTemplateId,
-                aceIds, mergeFields, scheduledAt, outcome, processedAt, failureReason,
-                createdBy, updatedBy, createdAt, updatedAt);
+        return new EmailBatch(
+                id,
+                faId,
+                fieldLeaderId,
+                recipientEmail,
+                templateId,
+                failTemplateId,
+                aceIds,
+                mergeFields,
+                scheduledAt,
+                outcome,
+                processedAt,
+                failureReason,
+                createdBy,
+                updatedBy,
+                createdAt,
+                updatedAt);
     }
 
     /** A copy marked {@code CANCELLED} (only valid while still {@code SCHEDULED}). */
     public EmailBatch asCancelled() {
-        return new EmailBatch(id, faId, fieldLeaderId, recipientEmail, templateId, failTemplateId,
-                aceIds, mergeFields, scheduledAt, BatchStatus.CANCELLED, processedAt, failureReason,
-                createdBy, updatedBy, createdAt, updatedAt);
+        return new EmailBatch(
+                id,
+                faId,
+                fieldLeaderId,
+                recipientEmail,
+                templateId,
+                failTemplateId,
+                aceIds,
+                mergeFields,
+                scheduledAt,
+                BatchStatus.CANCELLED,
+                processedAt,
+                failureReason,
+                createdBy,
+                updatedBy,
+                createdAt,
+                updatedAt);
     }
 }

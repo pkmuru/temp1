@@ -85,6 +85,9 @@ See `AbstractIntegrationTest`.
   preview, batch + scheduler passes) with only the outbound StaatEmail client mocked
 - `RampUpPackServiceApplicationTests` — full-context smoke (OpenAPI, actuator, validation,
   auditing via `X-User-Id`, JSONB/array round-trip)
+- `controller/*ControllerTest` — `@WebFluxTest` slices with mocked services: routing, status
+  codes, bean validation (including the exactly-one-of faId/fieldLeaderId rule), enum
+  query-param binding and ProblemDetail error mapping (404/409/422/400/500)
 - `repository/*RepositoryTest` — `@DataR2dbcTest` slices against PostgreSQL: claim queries
   (`UPDATE … RETURNING SKIP LOCKED`), JSONB/array mappings, unique constraints, seeded datamesh reads
 - `TemplateMergerTest`, `EmailSendServiceSplitTest` — pure unit tests (merge fields, 35 MB splitting)
@@ -92,6 +95,20 @@ See `AbstractIntegrationTest`.
 
 To explore the same embedded database interactively (psql/DBeaver, no Docker), run
 `EmbeddedPostgresRunner` from `src/test` — it starts PG on a fixed port `5433` and keeps it alive.
+
+## Code formatting
+
+Java sources are formatted with [palantir-java-format](https://github.com/palantir/palantir-java-format)
+(a lambda/chain-friendly google-java-format fork, 120-column) via the Spotless Maven plugin —
+long reactive pipelines break one operator per line.
+
+```bash
+mvn spotless:apply   # reformat all sources
+mvn spotless:check   # verify only (also runs automatically at the verify phase)
+```
+
+For format-on-save in IntelliJ, install the `palantir-java-format` plugin — it produces the same
+output as the Maven build.
 
 ## Run locally (plain PostgreSQL, no Azure)
 

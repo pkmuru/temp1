@@ -4,11 +4,9 @@ import com.ubs.wma.aat.rampuppack.client.staatemail.dto.StaatSendRequest;
 import com.ubs.wma.aat.rampuppack.client.staatemail.dto.StaatSendResponse;
 import com.ubs.wma.aat.rampuppack.client.staatemail.dto.UploadAttachmentRequest;
 import com.ubs.wma.aat.rampuppack.client.staatemail.dto.UploadAttachmentResponse;
-
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.service.annotation.HttpExchange;
 import org.springframework.web.service.annotation.PostExchange;
-
 import reactor.core.publisher.Mono;
 
 /**

@@ -1,10 +1,9 @@
 package com.ubs.wma.aat.rampuppack.dto;
 
+import com.ubs.wma.aat.rampuppack.domain.EmailStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-
-import com.ubs.wma.aat.rampuppack.domain.EmailStatus;
 
 /** Full view of a sent/attempted email part, including the merged values kept for reference. */
 public record EmailLogResponse(
@@ -31,5 +30,4 @@ public record EmailLogResponse(
         String failureReason,
         String createdBy,
         Instant createdAt,
-        Instant updatedAt) {
-}
+        Instant updatedAt) {}
