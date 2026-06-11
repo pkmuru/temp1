@@ -1,0 +1,22 @@
+# Maven
+target/
+
+# IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS / misc
+.DS_Store
+*.log
+HELP.md
+
+# Secrets / local env — never commit
+.env
+db.txt
+.dbvenv/

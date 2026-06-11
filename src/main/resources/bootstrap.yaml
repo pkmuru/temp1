@@ -1,0 +1,18 @@
+# ---------------------------------------------------------------------------
+# bootstrap.yaml — early "bootstrap" configuration.
+#
+# This service does NOT depend on Spring Cloud, so there is no separate Spring
+# Cloud bootstrap context. This file is imported first (see spring.config.import
+# in application.yaml) and therefore has LOWER precedence than application.yaml —
+# matching the classic semantics where application config overrides bootstrap.
+#
+# Keep stable service-identity / early settings here. To turn this into a real
+# Spring Cloud Config bootstrap later, add spring-cloud-starter-bootstrap (or
+# spring.config.import: configserver:) and pin to the supported combination:
+# Spring Boot 4.0.x GA + Spring Cloud 2025.1.x "Oakwood".
+# ---------------------------------------------------------------------------
+app:
+  service:
+    id: ramp-up-pack-service
+    domain: wma-aat
+    team: AAT
