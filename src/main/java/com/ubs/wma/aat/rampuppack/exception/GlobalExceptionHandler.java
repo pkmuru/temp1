@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -26,6 +27,34 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         problem.setTitle("Resource not found");
         problem.setType(URI.create("https://docs.ubs.com/wma/aat/errors/not-found"));
+        return problem;
+    }
+
+    @ExceptionHandler(MissingInsightDocumentException.class)
+    public ProblemDetail handleMissingDocuments(MissingInsightDocumentException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+        problem.setTitle("Missing insight documents");
+        problem.setType(URI.create("https://docs.ubs.com/wma/aat/errors/missing-insight-documents"));
+        problem.setProperty("missingAceIds", ex.missingAceIds());
+        return problem;
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ProblemDetail handleConflict(ConflictException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Conflict");
+        problem.setType(URI.create("https://docs.ubs.com/wma/aat/errors/conflict"));
+        return problem;
+    }
+
+    /** Unique-key or foreign-key violation (e.g. duplicate template code, deleting a referenced template). */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
+        log.debug("Data integrity violation", ex);
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "The request conflicts with existing data (duplicate key or referenced rows).");
+        problem.setTitle("Data conflict");
+        problem.setType(URI.create("https://docs.ubs.com/wma/aat/errors/data-conflict"));
         return problem;
     }
 

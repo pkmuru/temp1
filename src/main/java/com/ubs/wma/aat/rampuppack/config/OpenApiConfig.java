@@ -21,7 +21,9 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Ramp-Up Pack Service API")
                         .version("v1")
-                        .description("Reactive REST API for managing WMA AAT ramp-up packs.")
+                        .description("Reactive REST API for STAAT retention-pack email delivery: "
+                                + "email templates, STAAT insight documents, live/batched sends "
+                                + "and the send log.")
                         .contact(new Contact().name("UBS WMA AAT").email("wma-aat@ubs.com"))
                         .license(new License().name("UBS Internal — All rights reserved")));
     }

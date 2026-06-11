@@ -48,11 +48,36 @@ app:
       client-id: ${AZURE_CLIENT_ID:}
       client-secret: ${AZURE_CLIENT_SECRET:}
 
-  # StaatEmail: firm-wide email REST service (Entra/SPN-secured).
+  # StaatEmail: firm-wide email REST service, protected by Microsoft Entra ID.
+  # The dedicated SPN below authenticates via the OAuth2 client-credentials flow
+  # (MSAL); when unset, the app's shared Azure credential is used (local dev).
   staatemail:
     base-url: ${STAATEMAIL_BASE_URL:http://localhost:9090}
     # client-credentials scope of the StaatEmail Entra app registration
     scope: ${STAATEMAIL_SCOPE:api://CHANGE-ME/.default}
+    tenant-id: ${STAATEMAIL_TENANT_ID:}
+    client-id: ${STAATEMAIL_CLIENT_ID:}
+    client-secret: ${STAATEMAIL_CLIENT_SECRET:}
+    # Sender identity stamped on every /sendEmail request.
+    sender-gpn: ${STAATEMAIL_SENDER_GPN:}
+    from-gpn: ${STAATEMAIL_FROM_GPN:}
+    from-address: ${STAATEMAIL_FROM_ADDRESS:aat-delivery@ubs.com}
+    sender-address: ${STAATEMAIL_SENDER_ADDRESS:aat-delivery@ubs.com}
+    reply-to: ${STAATEMAIL_REPLY_TO:aat-delivery@ubs.com}
+    application-name: ${STAATEMAIL_APPLICATION_NAME:AAT}
+
+  # Email delivery: per-email attachment budget (35 MB Outlook limit -> splits
+  # into "Part X of N" emails) and the automatic-retry window for failures.
+  email:
+    max-attachment-bytes: ${EMAIL_MAX_ATTACHMENT_BYTES:36700160}
+    retry-window: ${EMAIL_RETRY_WINDOW:P7D}
+
+  # Scheduler watching the email_batch table and retrying failed deliveries.
+  # poll-interval is ISO-8601: PT1H = hourly, P1D = daily.
+  scheduler:
+    enabled: ${SCHEDULER_ENABLED:true}
+    poll-interval: ${SCHEDULER_POLL_INTERVAL:PT1H}
+    claim-limit: ${SCHEDULER_CLAIM_LIMIT:25}
 
 # -----------------------------------------------------------------------------
 # OpenAPI / Swagger UI (springdoc 3.x)
