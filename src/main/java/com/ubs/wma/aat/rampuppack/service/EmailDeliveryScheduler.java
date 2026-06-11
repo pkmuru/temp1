@@ -121,24 +121,30 @@ public class EmailDeliveryScheduler {
     private Mono<EmailBatch> processBatch(EmailBatch batch) {
         return emailSendService
                 .send(EmailMapper.toSendRequest(batch), batch.id())
-                .map(parts -> {
-                    boolean allSent = parts.stream().allMatch(part -> part.status() == EmailStatus.SENT);
-                    String reason = allSent
-                            ? null
-                            : parts.stream()
-                                    .filter(part -> part.status() != EmailStatus.SENT)
-                                    .map(EmailLog::failureReason)
-                                    .filter(Objects::nonNull)
-                                    .findFirst()
-                                    .orElse("one or more parts failed to send");
-                    return batch.asProcessed(
-                            allSent ? BatchStatus.COMPLETED : BatchStatus.FAILED, reason, Instant.now());
-                })
+                .map(parts -> processedBatch(batch, parts))
                 .onErrorResume(e -> {
                     log.error("Email batch {} failed before dispatch", batch.id(), e);
                     return Mono.just(
                             batch.asProcessed(BatchStatus.FAILED, EmailSendService.failureReason(e), Instant.now()));
                 })
                 .flatMap(batchRepository::save);
+    }
+
+    /**
+     * Pure outcome decision, no I/O: {@code COMPLETED} when every part was sent, otherwise
+     * {@code FAILED} carrying the first failed part's reason.
+     */
+    private static EmailBatch processedBatch(EmailBatch batch, List<EmailLog> parts) {
+        List<EmailLog> failedParts =
+                parts.stream().filter(part -> part.status() != EmailStatus.SENT).toList();
+        if (failedParts.isEmpty()) {
+            return batch.asProcessed(BatchStatus.COMPLETED, null, Instant.now());
+        }
+        String reason = failedParts.stream()
+                .map(EmailLog::failureReason)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse("one or more parts failed to send");
+        return batch.asProcessed(BatchStatus.FAILED, reason, Instant.now());
     }
 }

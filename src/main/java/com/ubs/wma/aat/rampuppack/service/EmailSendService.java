@@ -231,10 +231,19 @@ public class EmailSendService {
         return emailLogRepository
                 .save(part.pendingRow())
                 .flatMap(saved -> attempt(saved, part.documents()))
-                .flatMap(outcome -> isFirstFailure(outcome)
-                        ? notifyDeliveryFailure(outcome, failTemplate, part.documents())
-                                .thenReturn(outcome)
-                        : Mono.just(outcome));
+                .flatMap(outcome -> notifyIfFirstFailure(outcome, failTemplate, part.documents()));
+    }
+
+    /**
+     * A part that just failed for the first time triggers the one-off failure notice; in every
+     * case the delivery outcome passes through unchanged.
+     */
+    private Mono<EmailLog> notifyIfFirstFailure(
+            EmailLog outcome, EmailTemplate failTemplate, List<StaatInsightDocument> documents) {
+        if (!isFirstFailure(outcome)) {
+            return Mono.just(outcome);
+        }
+        return notifyDeliveryFailure(outcome, failTemplate, documents).thenReturn(outcome);
     }
 
     private static boolean isFirstFailure(EmailLog outcome) {

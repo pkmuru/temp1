@@ -39,10 +39,14 @@ public class EmailBatchService {
 
     /** Cancels a batch entry that has not started processing yet. */
     public Mono<EmailBatch> cancel(Long id) {
-        return findById(id)
-                .flatMap(batch -> batch.status() == BatchStatus.SCHEDULED
-                        ? repository.save(batch.asCancelled())
-                        : Mono.error(new ConflictException(
-                                "Email batch %d is %s and can no longer be cancelled".formatted(id, batch.status()))));
+        return findById(id).flatMap(this::cancelIfStillScheduled);
+    }
+
+    private Mono<EmailBatch> cancelIfStillScheduled(EmailBatch batch) {
+        if (batch.status() != BatchStatus.SCHEDULED) {
+            return Mono.error(new ConflictException(
+                    "Email batch %d is %s and can no longer be cancelled".formatted(batch.id(), batch.status())));
+        }
+        return repository.save(batch.asCancelled());
     }
 }

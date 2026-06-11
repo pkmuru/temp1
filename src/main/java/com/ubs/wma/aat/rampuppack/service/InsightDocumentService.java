@@ -44,18 +44,17 @@ public class InsightDocumentService {
         return repository
                 .findByAceIdIn(distinct)
                 .collectMap(StaatInsightDocument::aceId)
-                .flatMap(byAceId -> {
-                    List<String> missing = distinct.stream()
-                            .filter(aceId -> !byAceId.containsKey(aceId))
-                            .toList();
-                    return missing.isEmpty()
-                            ? Mono.just(orderedDocuments(distinct, byAceId))
-                            : Mono.error(new MissingInsightDocumentException(missing));
-                });
+                .flatMap(byAceId -> documentsInRequestOrder(distinct, byAceId));
     }
 
-    private static List<StaatInsightDocument> orderedDocuments(
+    /** Pure check: every requested id must have a document, else fail with exactly the missing ids. */
+    private static Mono<List<StaatInsightDocument>> documentsInRequestOrder(
             List<String> aceIds, Map<String, StaatInsightDocument> byAceId) {
-        return aceIds.stream().map(byAceId::get).toList();
+        List<String> missing =
+                aceIds.stream().filter(aceId -> !byAceId.containsKey(aceId)).toList();
+        if (!missing.isEmpty()) {
+            return Mono.error(new MissingInsightDocumentException(missing));
+        }
+        return Mono.just(aceIds.stream().map(byAceId::get).toList());
     }
 }
