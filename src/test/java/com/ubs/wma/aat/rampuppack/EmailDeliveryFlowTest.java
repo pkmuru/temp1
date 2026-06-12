@@ -8,7 +8,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.ubs.wma.aat.rampuppack.client.staatemail.StaatEmailClient;
 import com.ubs.wma.aat.rampuppack.client.staatemail.dto.StaatSendResponse;
-import com.ubs.wma.aat.rampuppack.client.staatemail.dto.UploadAttachmentRequest;
 import com.ubs.wma.aat.rampuppack.client.staatemail.dto.UploadAttachmentResponse;
 import com.ubs.wma.aat.rampuppack.config.properties.EmailProperties;
 import com.ubs.wma.aat.rampuppack.config.properties.SchedulerProperties;
@@ -34,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.core.io.Resource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
@@ -276,8 +276,8 @@ class EmailDeliveryFlowTest extends AbstractIntegrationTest {
 
     private void stubUploadOk() {
         willAnswer(invocation -> {
-                    UploadAttachmentRequest request = invocation.getArgument(0);
-                    return Mono.just(new UploadAttachmentResponse(request.fileName(), "ref-" + request.fileName()));
+                    Resource file = invocation.getArgument(0);
+                    return Mono.just(new UploadAttachmentResponse(file.getFilename(), "ref-" + file.getFilename()));
                 })
                 .given(staatEmailClient)
                 .uploadAttachment(any());

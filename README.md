@@ -181,6 +181,7 @@ Passwordless DB auth is **on by default**. Provide the service identity and data
 | `STAATEMAIL_TENANT_ID`, `STAATEMAIL_CLIENT_ID`, `STAATEMAIL_CLIENT_SECRET` | dedicated StaatEmail SPN — OAuth2 client-credentials flow (MSAL). Omit to fall back to the app's shared credential (local dev). |
 | `STAATEMAIL_SENDER_GPN`, `STAATEMAIL_FROM_GPN` | sender identity stamped on every `/sendEmail` |
 | `STAATEMAIL_FROM_ADDRESS`, `STAATEMAIL_SENDER_ADDRESS`, `STAATEMAIL_REPLY_TO` | sender/reply addresses |
+| `STAATEMAIL_WIRETAP` | `true` logs every StaatEmail request/response (method, URL, status, timing, headers) for troubleshooting; `Authorization` values are always masked. Default `false` (`true` in the `dev` profile). |
 | `SCHEDULER_POLL_INTERVAL` | ISO-8601 batch/retry poll interval (`PT1H` hourly, `P1D` daily) |
 | `EMAIL_MAX_ATTACHMENT_BYTES`, `EMAIL_RETRY_WINDOW` | per-email size cap (35 MB default) and retry window (`P7D`) |
 

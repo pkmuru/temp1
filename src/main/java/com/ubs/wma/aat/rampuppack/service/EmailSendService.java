@@ -5,7 +5,6 @@ import com.ubs.wma.aat.rampuppack.client.staatemail.dto.AttachmentRef;
 import com.ubs.wma.aat.rampuppack.client.staatemail.dto.MailRecipient;
 import com.ubs.wma.aat.rampuppack.client.staatemail.dto.MailRequestDetails;
 import com.ubs.wma.aat.rampuppack.client.staatemail.dto.StaatSendRequest;
-import com.ubs.wma.aat.rampuppack.client.staatemail.dto.UploadAttachmentRequest;
 import com.ubs.wma.aat.rampuppack.config.properties.EmailProperties;
 import com.ubs.wma.aat.rampuppack.config.properties.StaatEmailProperties;
 import com.ubs.wma.aat.rampuppack.domain.EmailLog;
@@ -20,13 +19,14 @@ import com.ubs.wma.aat.rampuppack.repository.EmailLogRepository;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -277,11 +277,20 @@ public class EmailSendService {
     }
 
     private Mono<AttachmentRef> uploadAttachment(StaatInsightDocument document) {
-        String contentBase64 =
-                Base64.getEncoder().encodeToString(document.htmlContent().getBytes(StandardCharsets.UTF_8));
         return staatEmailClient
-                .uploadAttachment(new UploadAttachmentRequest(document.fileName(), contentBase64))
+                .uploadAttachment(attachmentFile(document))
                 .map(uploaded -> new AttachmentRef(uploaded.attachmentReferenceId(), uploaded.fileName()));
+    }
+
+    /** The retention-pack HTML as a multipart file part carrying the document's file name. */
+    private static Resource attachmentFile(StaatInsightDocument document) {
+        byte[] content = document.htmlContent().getBytes(StandardCharsets.UTF_8);
+        return new ByteArrayResource(content) {
+            @Override
+            public String getFilename() {
+                return document.fileName();
+            }
+        };
     }
 
     private StaatSendRequest buildSendRequest(String smeId, EmailLog emailLog, List<AttachmentRef> attachments) {

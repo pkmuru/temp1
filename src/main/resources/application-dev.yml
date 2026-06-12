@@ -24,6 +24,11 @@ app:
     credential:
       client-id: ${AZURE_CLIENT_ID:} # UAMI client id when hosted in Azure
 
+  staatemail:
+    # Wiretap every StaatEmail exchange while the dev plumbing settles
+    # (headers masked — token values are never logged, per repo policy).
+    wiretap: ${STAATEMAIL_WIRETAP:true}
+
 logging:
   level:
     com.ubs.wma.aat: DEBUG

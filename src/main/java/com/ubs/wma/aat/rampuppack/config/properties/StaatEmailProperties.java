@@ -29,7 +29,8 @@ public record StaatEmailProperties(
         String fromAddress,
         String senderAddress,
         String replyTo,
-        @DefaultValue("AAT") String applicationName) {
+        @DefaultValue("AAT") String applicationName,
+        @DefaultValue("false") boolean wiretap) {
 
     /** True when the dedicated StaatEmail SPN is fully configured. */
     public boolean hasDedicatedSpn() {

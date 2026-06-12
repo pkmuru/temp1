@@ -4,6 +4,7 @@ import com.azure.core.credential.TokenCredential;
 import com.azure.identity.ClientSecretCredentialBuilder;
 import com.ubs.wma.aat.rampuppack.client.staatemail.EntraBearerExchangeFilter;
 import com.ubs.wma.aat.rampuppack.client.staatemail.StaatEmailClient;
+import com.ubs.wma.aat.rampuppack.client.staatemail.StaatEmailWiretapFilter;
 import com.ubs.wma.aat.rampuppack.config.properties.StaatEmailProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,10 +35,16 @@ public class StaatEmailConfig {
     @Bean
     public WebClient staatEmailWebClient(TokenCredential azureTokenCredential, StaatEmailProperties props) {
         TokenCredential credential = staatEmailCredential(props, azureTokenCredential);
-        return WebClient.builder()
+        WebClient.Builder builder = WebClient.builder()
                 .baseUrl(props.baseUrl())
-                .filter(new EntraBearerExchangeFilter(credential, props.scope()))
-                .build();
+                .filter(new EntraBearerExchangeFilter(credential, props.scope()));
+        if (props.wiretap()) {
+            // After the bearer filter, so the wiretap sees the (masked) Authorization header.
+            // Token values themselves are never logged — hard repo policy, even in dev.
+            log.warn("StaatEmail wiretap logging is ON — every request/response is logged (dev use only)");
+            builder.filter(new StaatEmailWiretapFilter());
+        }
+        return builder.build();
     }
 
     @Bean

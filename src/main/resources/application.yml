@@ -65,6 +65,9 @@ app:
     sender-address: ${STAATEMAIL_SENDER_ADDRESS:aat-delivery@ubs.com}
     reply-to: ${STAATEMAIL_REPLY_TO:aat-delivery@ubs.com}
     application-name: ${STAATEMAIL_APPLICATION_NAME:AAT}
+    # Dev troubleshooting: log every StaatEmail request/response (headers masked,
+    # tokens never printed). Keep OFF outside dev.
+    wiretap: ${STAATEMAIL_WIRETAP:false}
 
   # Email delivery: per-email attachment budget (35 MB Outlook limit -> splits
   # into "Part X of N" emails) and the automatic-retry window for failures.
